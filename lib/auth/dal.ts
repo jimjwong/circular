@@ -37,7 +37,7 @@ export const getOrganizations = cache(async (): Promise<OrganizationSummary[]> =
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("tenant_memberships")
-    .select("role, status, tenants!tenant_memberships_tenant_id_fkey!inner(id, name, slug, status, plan)")
+    .select("role, status, tenants!tenant_memberships_tenant_id_fkey!inner(id, name, slug, description, status, plan)")
     .eq("user_id", user.id)
     .eq("status", "active");
 
@@ -49,6 +49,7 @@ export const getOrganizations = cache(async (): Promise<OrganizationSummary[]> =
       id: tenant.id,
       name: tenant.name,
       slug: tenant.slug,
+      description: tenant.description,
       role: row.role as TenantRole,
       status: tenant.status,
       plan: tenant.plan,

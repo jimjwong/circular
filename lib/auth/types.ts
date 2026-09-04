@@ -7,6 +7,7 @@ export type OrganizationSummary = {
   id: string;
   name: string;
   slug: string;
+  description?: string | null;
   role: TenantRole;
   status: TenantStatus;
   plan: string;

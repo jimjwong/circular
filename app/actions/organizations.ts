@@ -15,6 +15,12 @@ const organizationSchema = z.object({
   slug: z.string().trim().toLowerCase().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use lowercase letters, numbers, and single hyphens."),
 });
 
+const communitySettingsSchema = z.object({
+  name: z.string().trim().min(2, "Enter a community name.").max(80),
+  slug: z.string().trim().toLowerCase().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use lowercase letters, numbers, and single hyphens.").max(80),
+  description: z.string().trim().min(2, "Enter a community description.").max(280),
+});
+
 const inviteSchema = z.object({
   email: z.string().trim().toLowerCase().email("Enter a valid email address."),
   role: z.enum(["admin", "moderator", "member"]),
@@ -33,6 +39,33 @@ const accessRoleSchema = z.object({
 });
 
 export type OrganizationActionState = AuthState & { inviteUrl?: string };
+
+export async function updateCommunitySettings(
+  _: OrganizationActionState | undefined,
+  formData: FormData,
+): Promise<OrganizationActionState> {
+  const organization = await requireOrganizationRole(["owner", "admin"]);
+  const parsed = communitySettingsSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("tenants").update({
+    name: parsed.data.name,
+    slug: parsed.data.slug,
+    description: parsed.data.description,
+    updated_at: new Date().toISOString(),
+  }).eq("id", organization.id);
+  if (error) return { message: error.code === "23505" ? "That community URL is already in use." : error.message };
+
+  revalidatePath("/", "layout");
+  revalidatePath("/dashboard");
+  revalidatePath("/community");
+  revalidatePath("/spaces");
+  revalidatePath("/team");
+  revalidatePath("/settings/general");
+  revalidatePath(`/${parsed.data.slug}`);
+  return { success: `Community settings saved. Your community URL is /${parsed.data.slug}.` };
+}
 
 export async function createOrganization(
   _: AuthState | undefined,

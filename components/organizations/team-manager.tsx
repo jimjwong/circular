@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-html-link-for-pages */
 
 import { useActionState, useState } from "react";
 import { Check, Clipboard, Crown, KeyRound, LoaderCircle, MailPlus, MoreHorizontal, Plus, Shield, Trash2, UserRoundX, Users } from "lucide-react";

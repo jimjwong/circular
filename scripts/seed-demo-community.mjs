@@ -40,14 +40,14 @@ for (const spec of accountSpecs) {
 const { error: staffError } = await supabase.from("platform_staff").upsert({ user_id: accounts.platform.id, role: "super_admin", is_active: true, granted_by: accounts.platform.id });
 if (staffError) throw staffError;
 
-let { data: tenant, error: tenantReadError } = await supabase.from("tenants").select("id").eq("slug", "creator-collective-demo").maybeSingle();
+let { data: tenant, error: tenantReadError } = await supabase.from("tenants").select("id").in("slug", ["apss", "creator-collective-demo"]).limit(1).maybeSingle();
 if (tenantReadError) throw tenantReadError;
 if (!tenant) {
-  const result = await supabase.from("tenants").insert({ name: "Creator Collective Demo", slug: "creator-collective-demo", description: "A populated local workspace for demonstrating Circular community features.", plan: "pro", status: "active", created_by: accounts.owner.id, accent_color: "#176b4d" }).select("id").single();
+  const result = await supabase.from("tenants").insert({ name: "APSS", slug: "apss", description: "Build a bigger pie for all in the speaking industry", plan: "pro", status: "active", created_by: accounts.owner.id, accent_color: "#176b4d" }).select("id").single();
   if (result.error) throw result.error;
   tenant = result.data;
 } else {
-  const { error } = await supabase.from("tenants").update({ name: "Creator Collective Demo", description: "A populated local workspace for demonstrating Circular community features.", plan: "pro", status: "active", updated_at: new Date().toISOString() }).eq("id", tenant.id);
+  const { error } = await supabase.from("tenants").update({ name: "APSS", slug: "apss", description: "Build a bigger pie for all in the speaking industry", plan: "pro", status: "active", updated_at: new Date().toISOString() }).eq("id", tenant.id);
   if (error) throw error;
 }
 
@@ -255,4 +255,4 @@ for (const attendee of [accounts.member, accounts.student, accounts.moderator]) 
   if (error) throw error;
 }
 
-console.log(JSON.stringify({ workspace: "Creator Collective Demo", slug: "creator-collective-demo", password, accounts: accountSpecs.map(({ key, email, name, role })=>({ key, email, name, role: role ?? "super_admin" })), spaces: spaceSpecs.length + 1, courses: courseSpecs.length, legacyLessons: lessonSpecs.length, lmsModules: moduleSpecs.length, lmsItems: itemSpecs.length, signedBadgeDemo: true }, null, 2));
+console.log(JSON.stringify({ workspace: "APSS", slug: "apss", password, accounts: accountSpecs.map(({ key, email, name, role })=>({ key, email, name, role: role ?? "super_admin" })), spaces: spaceSpecs.length + 1, courses: courseSpecs.length, legacyLessons: lessonSpecs.length, lmsModules: moduleSpecs.length, lmsItems: itemSpecs.length, signedBadgeDemo: true }, null, 2));
