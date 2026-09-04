@@ -3,6 +3,7 @@
 import { Paperclip, Upload } from "lucide-react";
 import { useRef, useState } from "react";
 import { registerCommunityAttachment } from "@/app/actions/community";
+import { createClientUuid } from "@/lib/client-uuid";
 import { createClient } from "@/lib/supabase/client";
 
 const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif", "video/mp4", "application/pdf"];
@@ -19,7 +20,7 @@ export function MediaUploader({ tenantId, userId, postId }: { tenantId: string; 
     }
     setPending(true); setStatus("Uploading…");
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, "-").slice(-120);
-    const path = `${tenantId}/${userId}/${crypto.randomUUID()}-${safeName}`;
+    const path = `${tenantId}/${userId}/${createClientUuid()}-${safeName}`;
     const supabase = createClient();
     const { error } = await supabase.storage.from("community-media").upload(path, file, { contentType: file.type, upsert: false });
     if (error) { setStatus(error.message); setPending(false); return; }

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, LoaderCircle } from "lucide-react";
 import { completeLearningItem, recordLearningHeartbeat, startLearningItem, submitQuizAnswer } from "@/app/actions/courses";
+import { createClientUuid } from "@/lib/client-uuid";
 
 export function LearningControls({ itemId, itemType, completionRequirement, watchThreshold, scoreThreshold, quizOptions, completed, nextHref }: { itemId: string; itemType: string; completionRequirement: string; watchThreshold: number; scoreThreshold: number | null; quizOptions: string[]; completed: boolean; nextHref: string | null }) {
   const router = useRouter();
@@ -14,20 +15,24 @@ export function LearningControls({ itemId, itemType, completionRequirement, watc
   const [submissionUrl, setSubmissionUrl] = useState("");
 
   useEffect(() => {
-    sessionKey.current = crypto.randomUUID();
-    void startLearningItem(itemId);
+    sessionKey.current = createClientUuid();
+    void startLearningItem(itemId).then((result) => { if (!result.ok) setError(result.error); }).catch(() => setError("Unable to start this lesson. Please reload and try again."));
     const timer = window.setInterval(() => {
-      if (document.visibilityState === "visible") void recordLearningHeartbeat(itemId, sessionKey.current, crypto.randomUUID(), 30);
+      if (document.visibilityState === "visible") void recordLearningHeartbeat(itemId, sessionKey.current, createClientUuid(), 30).catch(() => undefined);
     }, 30_000);
     return () => window.clearInterval(timer);
   }, [itemId]);
 
   const finish = () => startTransition(async () => {
-    setError("");
-    const result = completionRequirement === "score_threshold" ? await submitQuizAnswer(itemId, answer) : await completeLearningItem(itemId, itemType === "video" ? 100 : undefined, undefined, completionRequirement === "must_submit" ? submissionUrl : undefined);
-    if (!result.ok) return setError(result.error);
-    router.refresh();
-    if (nextHref) router.push(nextHref as never);
+    try {
+      setError("");
+      const result = completionRequirement === "score_threshold" ? await submitQuizAnswer(itemId, answer) : await completeLearningItem(itemId, itemType === "video" ? 100 : undefined, undefined, completionRequirement === "must_submit" ? submissionUrl : undefined);
+      if (!result.ok) return setError(result.error);
+      if (nextHref) router.push(nextHref as never);
+      else router.refresh();
+    } catch {
+      setError("Unable to save your progress. Please try again.");
+    }
   });
 
   if (completed) return <div className="mt-6 flex items-center gap-2 rounded-xl bg-[#e8f3ed] px-4 py-3 text-xs font-bold text-[#246749]"><CheckCircle2 size={16}/> Lesson completed</div>;
