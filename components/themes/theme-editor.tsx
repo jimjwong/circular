@@ -13,7 +13,7 @@ const colorFields: { key: keyof Pick<ThemeConfig, "primary" | "primaryHover" | "
   { key: "muted", label: "Muted text" }, { key: "border", label: "Borders" },
 ];
 
-export function ThemeEditor({ initialPreset, initialTheme }: { initialPreset: string; initialTheme: ThemeConfig }) {
+export function ThemeEditor({ initialPreset, initialTheme, canManage }: { initialPreset: string; initialTheme: ThemeConfig; canManage: boolean }) {
   const [preset, setPreset] = useState<ThemePresetId>((initialPreset as ThemePresetId) || "forest");
   const [theme, setTheme] = useState(initialTheme);
   const [state, action, pending] = useActionState<ThemeActionState | undefined, FormData>(updateWorkspaceTheme, undefined);
@@ -37,7 +37,9 @@ export function ThemeEditor({ initialPreset, initialTheme }: { initialPreset: st
     setTheme((current) => ({ ...current, [key]: value }));
   }
 
-  return <form action={action} className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_370px]">
+  return <>
+    {!canManage && <div className="theme-soft theme-brand-text mb-5 flex items-start gap-3 rounded-2xl border border-current/10 p-4"><Palette className="mt-0.5 shrink-0" size={17}/><div><b className="block text-sm">Viewing the workspace theme</b><p className="mt-1 text-xs leading-5 opacity-80">Only workspace owners and admins can change these settings. You can still view the active palette and typography below.</p></div></div>}
+    <form action={action} data-readonly={!canManage || undefined} className={cn("grid gap-6 xl:grid-cols-[minmax(0,1fr)_370px]", !canManage && "pointer-events-none select-none opacity-75")}>
     <input type="hidden" name="preset" value={preset}/>
     {Object.entries(theme).map(([key, value]) => <input key={key} type="hidden" name={key} value={value}/>) }
     <div className="space-y-6">
@@ -48,7 +50,8 @@ export function ThemeEditor({ initialPreset, initialTheme }: { initialPreset: st
       <div className="flex flex-wrap justify-end gap-3"><button type="button" onClick={() => { setPreset("forest"); setTheme(DEFAULT_THEME); }} className="theme-secondary-button inline-flex h-11 items-center gap-2 rounded-xl border px-4 text-xs font-bold"><RotateCcw size={14}/> Reset to Forest</button><button disabled={pending} className="theme-primary inline-flex h-11 items-center gap-2 rounded-xl px-5 text-xs font-bold text-white disabled:opacity-60">{pending ? <LoaderCircle size={15} className="animate-spin"/> : <Save size={15}/>} {pending ? "Saving…" : "Save workspace theme"}</button></div>
     </div>
     <aside className="xl:sticky xl:top-6 xl:h-fit"><div className="theme-card overflow-hidden rounded-[24px] border shadow-lg"><div className="theme-primary p-6 text-white"><span className="text-[10px] font-bold uppercase tracking-[.18em] opacity-70">Live preview</span><h2 className="font-display mt-4 text-2xl font-bold">Bring your people together.</h2><p className="mt-2 text-sm leading-6 opacity-75">A space that looks and feels unmistakably yours.</p><button type="button" className="mt-5 rounded-xl px-4 py-2.5 text-xs font-bold" style={{ backgroundColor: theme.accent, color: theme.text }}>Join the conversation</button></div><div className="p-5"><div className="flex items-center gap-3"><span className="theme-soft theme-brand-text grid size-10 place-items-center rounded-full text-xs font-bold">AC</span><div><b className="block text-sm">Aisha Chen</b><span className="theme-muted text-[11px]">Posted in Introductions</span></div></div><h3 className="font-display mt-5 font-bold">What are you building this month?</h3><p className="theme-muted mt-2 text-xs leading-5">Share one goal with the community and meet someone working toward something similar.</p><div className="theme-divider mt-5 flex gap-4 border-t pt-4 text-xs"><span className="theme-brand-text font-semibold">♥ 24</span><span className="theme-muted">12 comments</span></div></div></div><p className="theme-muted mt-3 text-center text-[11px]">Changes preview across this page before you save.</p></aside>
-  </form>;
+    </form>
+  </>;
 }
 
 function FontSelect({ label, value, onChange }: { label: string; value: ThemeConfig["headingFont"]; onChange: (value: ThemeConfig["headingFont"]) => void }) {
