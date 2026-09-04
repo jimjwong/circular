@@ -5,7 +5,7 @@ import { z } from "zod";
 import { requireOrganizationRole } from "@/lib/auth/dal";
 import { createClient } from "@/lib/supabase/server";
 
-const presetIds = ["forest", "ocean", "sunset", "violet", "rose", "slate", "custom"] as const;
+const presetIds = ["forest", "ocean", "sunset", "violet", "rose", "slate", "apss", "custom"] as const;
 const fontIds = ["inter", "manrope", "system", "editorial"] as const;
 const hexColor = z.string().regex(/^#[0-9a-f]{6}$/i, "Choose a valid six-digit color.");
 const themeSchema = z.object({

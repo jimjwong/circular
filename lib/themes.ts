@@ -20,7 +20,7 @@ export type ThemeConfig = {
   bodyFont: ThemeFontId;
 };
 
-export type ThemePresetId = "forest" | "ocean" | "sunset" | "violet" | "rose" | "slate" | "custom";
+export type ThemePresetId = "forest" | "ocean" | "sunset" | "violet" | "rose" | "slate" | "apss" | "custom";
 
 export const THEME_PRESETS: Record<Exclude<ThemePresetId, "custom">, { name: string; description: string; config: ThemeConfig }> = {
   forest: {
@@ -52,6 +52,11 @@ export const THEME_PRESETS: Record<Exclude<ThemePresetId, "custom">, { name: str
     name: "Slate",
     description: "Minimal, focused, and modern",
     config: { primary: "#1e293b", primaryHover: "#334155", accent: "#22c55e", background: "#f1f5f9", surface: "#ffffff", text: "#0f172a", muted: "#64748b", border: "#d8e0e9", headingFont: "system", bodyFont: "system" },
+  },
+  apss: {
+    name: "APSS",
+    description: "Bold orange and blue-teal, inspired by APSS",
+    config: { primary: "#ef5222", primaryHover: "#d94719", accent: "#31687d", background: "#f0f0f0", surface: "#ffffff", text: "#202020", muted: "#707070", border: "#d8d8d8", headingFont: "manrope", bodyFont: "inter" },
   },
 };
 

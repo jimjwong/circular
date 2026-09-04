@@ -17,13 +17,13 @@ if (tenantError) throw tenantError;
 const original = { theme_preset: tenant.theme_preset, theme_config: tenant.theme_config };
 
 try {
-  const ocean = { primary: "#164e63", primaryHover: "#0e7490", accent: "#38bdf8", background: "#f0f9ff", surface: "#ffffff", text: "#12303b", muted: "#607b86", border: "#cfe6ef", headingFont: "manrope", bodyFont: "inter" };
-  const { error: ownerError } = await owner.from("tenants").update({ theme_preset: "ocean", theme_config: ocean }).eq("id", tenant.id);
+  const apss = { primary: "#ef5222", primaryHover: "#d94719", accent: "#31687d", background: "#f0f0f0", surface: "#ffffff", text: "#202020", muted: "#707070", border: "#d8d8d8", headingFont: "manrope", bodyFont: "inter" };
+  const { error: ownerError } = await owner.from("tenants").update({ theme_preset: "apss", theme_config: apss }).eq("id", tenant.id);
   if (ownerError) throw new Error(`Owner theme update failed: ${ownerError.message}`);
   const { data: ownerSaved } = await member.from("tenants").select("theme_preset, theme_config").eq("id", tenant.id).single();
-  if (ownerSaved.theme_preset !== "ocean" || ownerSaved.theme_config.primary !== ocean.primary) throw new Error("Members cannot read the saved workspace theme.");
+  if (ownerSaved.theme_preset !== "apss" || ownerSaved.theme_config.primary !== apss.primary || ownerSaved.theme_config.accent !== apss.accent) throw new Error("The APSS workspace theme did not persist for members.");
 
-  const custom = { ...ocean, primary: "#4f46e5", primaryHover: "#4338ca", headingFont: "editorial" };
+  const custom = { ...apss, primary: "#4f46e5", primaryHover: "#4338ca", headingFont: "editorial" };
   const { error: adminError } = await admin.from("tenants").update({ theme_preset: "custom", theme_config: custom }).eq("id", tenant.id);
   if (adminError) throw new Error(`Admin theme update failed: ${adminError.message}`);
   const { data: adminSaved } = await owner.from("tenants").select("theme_preset, theme_config").eq("id", tenant.id).single();
@@ -34,7 +34,7 @@ try {
     if (!error && data?.length) throw new Error(`${role} was able to change the workspace theme.`);
   }
 
-  console.log(JSON.stringify({ ownerCanManageThemes: true, adminCanManageThemes: true, membersReadSavedTheme: true, customColorsPersist: true, customFontsPersist: true, moderatorUpdateRejected: true, memberUpdateRejected: true }, null, 2));
+  console.log(JSON.stringify({ apssPresetVerified: true, ownerCanManageThemes: true, adminCanManageThemes: true, membersReadSavedTheme: true, customColorsPersist: true, customFontsPersist: true, moderatorUpdateRejected: true, memberUpdateRejected: true }, null, 2));
 } finally {
   const { error } = await owner.from("tenants").update(original).eq("id", tenant.id);
   if (error) throw new Error(`Unable to restore the original demo theme: ${error.message}`);
