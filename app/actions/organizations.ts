@@ -19,6 +19,7 @@ const communitySettingsSchema = z.object({
   name: z.string().trim().min(2, "Enter a community name.").max(80),
   slug: z.string().trim().toLowerCase().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use lowercase letters, numbers, and single hyphens.").max(80),
   description: z.string().trim().min(2, "Enter a community description.").max(280),
+  isDiscoverable: z.enum(["true", "false"]).transform((value) => value === "true"),
 });
 
 const inviteSchema = z.object({
@@ -53,6 +54,7 @@ export async function updateCommunitySettings(
     name: parsed.data.name,
     slug: parsed.data.slug,
     description: parsed.data.description,
+    is_discoverable: parsed.data.isDiscoverable,
     updated_at: new Date().toISOString(),
   }).eq("id", organization.id);
   if (error) return { message: error.code === "23505" ? "That community URL is already in use." : error.message };

@@ -4,6 +4,7 @@ import { AuthenticatedApp } from "@/components/organizations/authenticated-app";
 
 export default async function DashboardPage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
   const { view } = await searchParams;
+  if (view === "settings") redirect("/settings/general");
   const [user, organizations, activeOrganization] = await Promise.all([
     verifyUser(),
     getOrganizations(),
