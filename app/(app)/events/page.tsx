@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, CalendarDays, Clock3, MapPin, Plus, Users } from "lucide-react";
+import { ArrowLeft, CalendarDays, Clock3, ExternalLink, MapPin, Plus, Users } from "lucide-react";
 import { createEvent, toggleEventRegistration } from "@/app/actions/events";
 import { EventDateTimeFields } from "@/components/events/event-date-time-fields";
 import { RealtimeEvents } from "@/components/events/realtime-events";
@@ -23,7 +23,7 @@ export default async function EventsPage({ searchParams }: { searchParams: Promi
   const canManage = ["owner", "admin"].includes(organization.role);
   const supabase = await createClient();
   const [{ data: events, error }, { data: spaces }, { data: registrations }] = await Promise.all([
-    supabase.from("events").select("id, space_id, host_id, title, description, starts_at, ends_at, location_type, location_url, capacity, status").eq("tenant_id", organization.id).order("starts_at"),
+    supabase.from("events").select("id, space_id, host_id, title, description, starts_at, ends_at, location_type, location_url, image_url, registration_url, capacity, status").eq("tenant_id", organization.id).order("starts_at"),
     supabase.from("spaces").select("id, name").eq("tenant_id", organization.id).order("name"),
     supabase.from("event_rsvps").select("event_id, user_id, status").eq("tenant_id", organization.id),
   ]);
@@ -60,6 +60,8 @@ export default async function EventsPage({ searchParams }: { searchParams: Promi
           <EventDateTimeFields/>
           <label><span className="mb-2 block text-xs font-semibold">Location type</span><select name="locationType" className="h-11 w-full rounded-xl border border-[#dce5df] bg-white px-3 text-sm"><option value="live_room">Circular live room</option><option value="virtual">External virtual event</option><option value="in_person">In person</option></select></label>
           <label><span className="mb-2 block text-xs font-semibold">Location or URL</span><input name="locationUrl" maxLength={500} placeholder="Meeting URL or venue" className="h-11 w-full rounded-xl border border-[#dce5df] px-3 text-sm"/></label>
+          <label><span className="mb-2 block text-xs font-semibold">Cover image URL</span><input type="url" name="imageUrl" maxLength={1000} placeholder="https://…" className="h-11 w-full rounded-xl border border-[#dce5df] px-3 text-sm"/></label>
+          <label><span className="mb-2 block text-xs font-semibold">External registration URL</span><input type="url" name="registrationUrl" maxLength={1000} placeholder="https://…" className="h-11 w-full rounded-xl border border-[#dce5df] px-3 text-sm"/></label>
           <label><span className="mb-2 block text-xs font-semibold">Capacity</span><input type="number" name="capacity" min={1} max={100000} placeholder="Unlimited" className="h-11 w-full rounded-xl border border-[#dce5df] px-3 text-sm"/></label>
           <label><span className="mb-2 block text-xs font-semibold">Space</span><select name="spaceId" className="h-11 w-full rounded-xl border border-[#dce5df] bg-white px-3 text-sm"><option value="">Community-wide</option>{(spaces ?? []).map(space=><option key={space.id} value={space.id}>{space.name}</option>)}</select></label>
           <label className="sm:col-span-2"><span className="mb-2 block text-xs font-semibold">Description</span><textarea name="description" maxLength={5000} className="min-h-28 w-full rounded-xl border border-[#dce5df] p-3 text-sm"/></label>
@@ -72,12 +74,18 @@ export default async function EventsPage({ searchParams }: { searchParams: Promi
           const going = counts.get(event.id) ?? 0;
           const registered = mine.has(event.id);
           const full = event.capacity !== null && going >= event.capacity;
-          return <article key={event.id} className="rounded-[22px] border border-[#e0e7e2] bg-white p-5">
-            <div className="flex items-start justify-between gap-3"><span className={`rounded-full px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide ${event.status === "scheduled" ? "bg-[#e8f3ed] text-[#277052]" : event.status === "draft" ? "bg-[#edf0ee] text-[#65746c]" : "bg-[#fff0e8] text-[#985f36]"}`}>{event.status}</span><span className="text-[10px] text-[#829087]">{event.space_id ? spaces?.find(space=>space.id===event.space_id)?.name : "Community-wide"}</span></div>
+          return <article key={event.id} className="overflow-hidden rounded-[22px] border border-[#e0e7e2] bg-white">
+            {event.image_url && <Link
+              href={`/events/${event.id}`}
+              aria-label={`View ${event.title}`}
+              className="block h-48 bg-[#edf1ee] bg-contain bg-center bg-no-repeat"
+              style={{ backgroundImage: `url(${JSON.stringify(event.image_url)})` }}
+            />}
+            <div className="p-5"><div className="flex items-start justify-between gap-3"><span className={`rounded-full px-2.5 py-1 text-[9px] font-bold uppercase tracking-wide ${event.status === "scheduled" ? "bg-[#e8f3ed] text-[#277052]" : event.status === "draft" ? "bg-[#edf0ee] text-[#65746c]" : "bg-[#fff0e8] text-[#985f36]"}`}>{event.status}</span><span className="text-[10px] text-[#829087]">{event.space_id ? spaces?.find(space=>space.id===event.space_id)?.name : "Community-wide"}</span></div>
             <Link href={`/events/${event.id}`}><h2 className="font-display mt-4 text-lg font-bold hover:text-[#2f7758]">{event.title}</h2></Link>
-            <p className="mt-2 line-clamp-2 text-sm leading-6 text-[#6d7c73]">{event.description || "No description added yet."}</p>
-            <div className="mt-5 space-y-2 text-xs text-[#607168]"><p className="flex items-center gap-2"><Clock3 size={14}/>{eventDate(event.starts_at)}</p><p className="flex items-center gap-2"><MapPin size={14}/>{event.location_type.replace("_", " ")}{event.location_url ? ` · ${event.location_url}` : ""}</p><p className="flex items-center gap-2"><Users size={14}/>{going}{event.capacity ? ` / ${event.capacity}` : ""} going</p></div>
-            <div className="mt-5 flex gap-2"><Link href={`/events/${event.id}`} className="grid h-10 flex-1 place-items-center rounded-xl border border-[#dce5df] text-xs font-semibold">View details</Link>{event.status === "scheduled" && new Date(event.starts_at).valueOf() > now && <form action={toggleEventRegistration} className="flex-1"><input type="hidden" name="eventId" value={event.id}/><button disabled={!registered && full} className={`h-10 w-full rounded-xl text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${registered ? "bg-[#eef2ef] text-[#52665a]" : "bg-[#183f30] text-white"}`}>{registered ? "Cancel RSVP" : full ? "Event full" : "Register"}</button></form>}</div>
+            <p className="mt-2 line-clamp-3 text-sm leading-6 text-[#6d7c73]">{event.description || "No description added yet."}</p>
+            <div className="mt-5 space-y-2 text-xs text-[#607168]"><p className="flex items-center gap-2"><Clock3 size={14}/>{eventDate(event.starts_at)}</p><p className="flex items-start gap-2"><MapPin size={14} className="mt-0.5 shrink-0"/><span className="line-clamp-2">{event.location_type.replace("_", " ")}{event.location_url ? ` · ${event.location_url}` : ""}</span></p><p className="flex items-center gap-2"><Users size={14}/>{going}{event.capacity ? ` / ${event.capacity}` : ""} going</p></div>
+            <div className="mt-5 flex flex-wrap gap-2"><Link href={`/events/${event.id}`} className="grid h-10 min-w-28 flex-1 place-items-center rounded-xl border border-[#dce5df] text-xs font-semibold">View details</Link>{event.registration_url ? <a href={event.registration_url} target="_blank" rel="noreferrer" className="inline-flex h-10 min-w-36 flex-1 items-center justify-center gap-2 rounded-xl bg-[#183f30] text-xs font-semibold text-white">Register with APSS <ExternalLink size={13}/></a> : event.status === "scheduled" && new Date(event.starts_at).valueOf() > now && <form action={toggleEventRegistration} className="min-w-28 flex-1"><input type="hidden" name="eventId" value={event.id}/><button disabled={!registered && full} className={`h-10 w-full rounded-xl text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${registered ? "bg-[#eef2ef] text-[#52665a]" : "bg-[#183f30] text-white"}`}>{registered ? "Cancel RSVP" : full ? "Event full" : "Register"}</button></form>}</div></div>
           </article>;
         })}
       </section>
