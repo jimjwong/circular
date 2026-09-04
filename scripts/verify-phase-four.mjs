@@ -39,9 +39,24 @@ if (!event) {
   if (result.error) throw result.error;
   event = result.data;
 } else {
-  const { error } = await owner.from("events").update({ starts_at: startsAt, ends_at: endsAt, capacity: 1, status: "scheduled" }).eq("id", event.id);
+  const { error } = await owner.from("events").update({ starts_at: startsAt, ends_at: endsAt, capacity: 1, status: "scheduled", hidden_roles: [] }).eq("id", event.id);
   if (error) throw error;
 }
+
+const { error: hideError } = await owner.from("events").update({ hidden_roles: ["member"] }).eq("id", event.id);
+if (hideError) throw hideError;
+const [{ data: ownerHiddenEvent }, { data: memberHiddenEvent }, { error: hiddenRegistrationError }] = await Promise.all([
+  owner.from("events").select("id").eq("id", event.id).maybeSingle(),
+  member.from("events").select("id").eq("id", event.id).maybeSingle(),
+  member.rpc("toggle_event_registration", { check_event_id: event.id }),
+]);
+if (!ownerHiddenEvent) throw new Error("An administrator lost access to a role-hidden event.");
+if (memberHiddenEvent) throw new Error("A member could read an event hidden from members.");
+if (!hiddenRegistrationError) throw new Error("A hidden member could register for an event directly.");
+const { error: showError } = await owner.from("events").update({ hidden_roles: [] }).eq("id", event.id);
+if (showError) throw showError;
+const { data: restoredEvent } = await member.from("events").select("id").eq("id", event.id).maybeSingle();
+if (!restoredEvent) throw new Error("Removing role restrictions did not restore event visibility.");
 
 const { error: cleanupError } = await owner.from("event_rsvps").delete().eq("event_id", event.id);
 if (cleanupError) throw cleanupError;
@@ -69,6 +84,8 @@ console.log(JSON.stringify({
   adminEventCreationVerified: true,
   memberEventCreationRejected: true,
   draftVisibilityRestricted: true,
+  roleVisibilityEnforced: true,
+  hiddenRegistrationRejected: true,
   memberRegistrationVerified: true,
   capacityEnforcedAtomically: true,
   attendeeManagementVerified: true,

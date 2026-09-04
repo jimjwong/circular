@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, CalendarDays, Clock3, ExternalLink, MapPin, Trash2, UserRoundX, Users } from "lucide-react";
+import { ArrowLeft, CalendarDays, Clock3, ExternalLink, EyeOff, MapPin, Trash2, UserRoundX, Users } from "lucide-react";
 import { deleteEvent, removeEventAttendee, setEventStatus, toggleEventRegistration, updateEvent } from "@/app/actions/events";
 import { SubmitButton } from "@/components/community/submit-button";
 import { EventDateTimeFields } from "@/components/events/event-date-time-fields";
@@ -30,7 +30,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ ev
   const canManage = ["owner", "admin"].includes(organization.role);
   const supabase = await createClient();
   const [{ data: event }, { data: spaces }, { data: registrations }] = await Promise.all([
-    supabase.from("events").select("id, tenant_id, space_id, host_id, title, description, starts_at, ends_at, location_type, location_url, image_url, registration_url, capacity, status").eq("id", eventId).eq("tenant_id", organization.id).maybeSingle(),
+    supabase.from("events").select("id, tenant_id, space_id, host_id, title, description, starts_at, ends_at, location_type, location_url, image_url, registration_url, hidden_roles, capacity, status").eq("id", eventId).eq("tenant_id", organization.id).maybeSingle(),
     supabase.from("spaces").select("id, name").eq("tenant_id", organization.id).order("name"),
     supabase.from("event_rsvps").select("user_id, status, created_at").eq("event_id", eventId).eq("tenant_id", organization.id).order("created_at"),
   ]);
@@ -53,7 +53,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ ev
         <div className="space-y-5">
           <section className="overflow-hidden rounded-[24px] bg-[#183f30] text-white">
             {event.image_url && <div role="img" aria-label={`${event.title} event artwork`} className="h-64 bg-white bg-contain bg-center bg-no-repeat sm:h-80" style={{ backgroundImage: `url(${JSON.stringify(event.image_url)})` }}/>}<div className="p-7 sm:p-9">
-            <div className="flex flex-wrap items-center gap-2"><span className="rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wide">{event.status}</span>{event.space_id && <span className="rounded-full bg-white/10 px-3 py-1 text-[10px]">{spaces?.find(space=>space.id===event.space_id)?.name}</span>}</div>
+            <div className="flex flex-wrap items-center gap-2"><span className="rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-wide">{event.status}</span>{event.space_id && <span className="rounded-full bg-white/10 px-3 py-1 text-[10px]">{spaces?.find(space=>space.id===event.space_id)?.name}</span>}{canManage && event.hidden_roles.length > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-[#efc77e] px-3 py-1 text-[10px] font-bold text-[#183f30]"><EyeOff size={11}/> Hidden from {event.hidden_roles.join(" + ")}</span>}</div>
             <h2 className="font-display mt-6 text-3xl font-bold tracking-[-.04em]">{event.title}</h2>
             <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-[#c8d9d0]">{event.description || "The host has not added a description yet."}</p>
             <div className="mt-7 grid gap-3 text-sm sm:grid-cols-2"><p className="flex items-start gap-2"><Clock3 size={16} className="mt-0.5 text-[#efc77e]"/><span>{eventDate(event.starts_at)}{event.ends_at && <><br/><small className="text-[#aec6ba]">Ends {eventDate(event.ends_at)}</small></>}</span></p><p className="flex items-start gap-2"><MapPin size={16} className="mt-0.5 text-[#efc77e]"/><span className="capitalize">{event.location_type.replace("_", " ")}{event.location_url && <><br/>{locationIsLink ? <a href={event.location_url} target="_blank" rel="noreferrer" className="text-xs text-[#efc77e] underline">Open event location</a> : <small className="text-[#aec6ba]">{event.location_url}</small>}</>}</span></p></div>
@@ -72,6 +72,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ ev
               <label><span className="mb-2 block text-xs font-semibold">External registration URL</span><input type="url" name="registrationUrl" defaultValue={event.registration_url ?? ""} maxLength={1000} className="h-11 w-full rounded-xl border border-[#dce5df] px-3 text-sm"/></label>
               <label><span className="mb-2 block text-xs font-semibold">Capacity</span><input type="number" name="capacity" defaultValue={event.capacity ?? ""} min={Math.max(1, going.length)} max={100000} className="h-11 w-full rounded-xl border border-[#dce5df] px-3 text-sm"/></label>
               <label><span className="mb-2 block text-xs font-semibold">Space</span><select name="spaceId" defaultValue={event.space_id ?? ""} className="h-11 w-full rounded-xl border border-[#dce5df] bg-white px-3 text-sm"><option value="">Community-wide</option>{(spaces ?? []).map(space=><option key={space.id} value={space.id}>{space.name}</option>)}</select></label>
+              <fieldset className="rounded-2xl border border-[#dce5df] p-4 sm:col-span-2"><legend className="px-2 text-xs font-bold">Hide this event from</legend><p className="mt-1 text-[11px] text-[#74827a]">Owners and admins always retain management access.</p><div className="mt-3 flex flex-wrap gap-3"><label className="flex cursor-pointer items-center gap-2 rounded-xl bg-[#f4f7f5] px-3 py-2 text-xs font-semibold"><input type="checkbox" name="hiddenRoles" value="member" defaultChecked={event.hidden_roles.includes("member")} className="size-4 accent-[#2d7658]"/> Members</label><label className="flex cursor-pointer items-center gap-2 rounded-xl bg-[#f4f7f5] px-3 py-2 text-xs font-semibold"><input type="checkbox" name="hiddenRoles" value="moderator" defaultChecked={event.hidden_roles.includes("moderator")} className="size-4 accent-[#2d7658]"/> Moderators</label></div></fieldset>
               <label className="sm:col-span-2"><span className="mb-2 block text-xs font-semibold">Description</span><textarea name="description" defaultValue={event.description ?? ""} maxLength={5000} className="min-h-28 w-full rounded-xl border border-[#dce5df] p-3 text-sm"/></label>
               <input type="hidden" name="status" value={event.status === "draft" ? "draft" : "scheduled"}/>
               <div className="flex justify-end sm:col-span-2"><SubmitButton className="h-10 rounded-xl bg-[#183f30] px-5 text-xs font-semibold text-white">Save event</SubmitButton></div>
