@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import { signOut } from "@/app/actions/auth";
 import type { CurrentUser, OrganizationSummary } from "@/lib/auth/types";
 import { cn } from "@/lib/utils";
+import { canAccessDashboardView, DASHBOARD_VIEW_PERMISSIONS } from "@/lib/auth/feature-permissions";
 
 type View =
   | "overview" | "spaces" | "posts" | "members" | "events" | "courses" | "live"
@@ -291,7 +292,7 @@ const demoOrganizations: OrganizationSummary[] = [
 
 const demoUser: CurrentUser = { id: "demo", email: "jamie@example.com", displayName: "Jamie Chen", initials: "JC" };
 
-export function CircularApp({ organizations = demoOrganizations, activeOrganizationId, currentUser = demoUser, initialView = "overview", onSwitchOrganization }: { organizations?: OrganizationSummary[]; activeOrganizationId?: string; currentUser?: CurrentUser; initialView?: string; onSwitchOrganization?: (tenantId: string) => Promise<void> }) {
+export function CircularApp({ organizations = demoOrganizations, activeOrganizationId, currentUser = demoUser, initialView = "overview", grantedPermissions = ["workspace.full_access", ...Object.values(DASHBOARD_VIEW_PERMISSIONS).flat()], onSwitchOrganization }: { organizations?: OrganizationSummary[]; activeOrganizationId?: string; currentUser?: CurrentUser; initialView?: string; grantedPermissions?: string[]; onSwitchOrganization?: (tenantId: string) => Promise<void> }) {
   const router = useRouter();
   const resolvedInitialView = validViews.has(initialView as View) ? initialView as View : "overview";
   const [view, setView] = useState<View>(resolvedInitialView);
@@ -308,7 +309,8 @@ export function CircularApp({ organizations = demoOrganizations, activeOrganizat
 
   useEffect(() => { if (!toast) return; const t=setTimeout(()=>setToast(""),2800); return()=>clearTimeout(t); }, [toast]);
   useEffect(() => { const onKey=(e:KeyboardEvent)=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="k"){e.preventDefault();setSearchOpen(true)} if(e.key==="Escape")setSearchOpen(false)}; window.addEventListener("keydown",onKey); return()=>window.removeEventListener("keydown",onKey); },[]);
-  const allNav = useMemo(()=>navGroups.flatMap(g=>g.items),[]);
+  const visibleNavGroups = useMemo(()=>navGroups.map(group=>({ ...group, items:group.items.filter(item=>canAccessDashboardView(item.id, grantedPermissions)) })).filter(group=>group.items.length>0),[grantedPermissions]);
+  const allNav = useMemo(()=>visibleNavGroups.flatMap(g=>g.items),[visibleNavGroups]);
   const searchResults = allNav.filter(item=>item.label.toLowerCase().includes(searchQuery.trim().toLowerCase()));
   const closeMobileSidebar=()=>setMobileSidebarOpen(false);
   const navigate=(next:View)=>{
@@ -356,7 +358,7 @@ export function CircularApp({ organizations = demoOrganizations, activeOrganizat
         <button onClick={()=>setTenantMenu(!tenantMenu)} className="flex w-full items-center gap-3 rounded-xl p-2 text-left transition hover:bg-[#f0f4f1]"><span className="grid size-9 place-items-center rounded-xl bg-[#183f30] font-display text-sm font-bold text-white">C</span><span className="min-w-0 flex-1"><b className="block truncate text-sm">{tenant}</b><small className="block text-[10px] text-[#849188]">Pro workspace</small></span><ChevronDown size={15} className="text-[#819087]"/></button>
         {tenantMenu && <Card className="absolute left-3 right-3 top-[62px] z-50 p-2 shadow-xl">{organizations.map(organization=><button key={organization.id} onClick={()=>switchTenant(organization)} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs font-semibold hover:bg-[#f2f5f3]"><span className="grid size-6 place-items-center rounded-lg bg-[#e8f1ec] text-[9px] text-[#286b50]">{organization.name[0]}</span><span className="min-w-0 flex-1 truncate">{organization.name}</span>{tenant===organization.name&&<Check size={13}/>}</button>)}<div className="my-1 border-t border-[#e8ece9]"/><Link href="/onboarding?new=1" onClick={closeMobileSidebar} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs text-[#53675b] hover:bg-[#f2f5f3]"><Plus size={13}/> Create workspace</Link></Card>}
       </div>
-      <nav className="scrollbar-none flex-1 overflow-y-auto px-3 py-3">{navGroups.map((group,index)=><div key={group.label||index} className={cn(index>0&&"mt-5")}>
+      <nav className="scrollbar-none flex-1 overflow-y-auto px-3 py-3">{visibleNavGroups.map((group,index)=><div key={group.label||index} className={cn(index>0&&"mt-5")}>
         {group.label&&<p className="mb-1 px-2 text-[9px] font-bold uppercase tracking-[.14em] text-[#a0aaa4]">{group.label}</p>}
         <div className="space-y-0.5">{group.items.map(item=><Link key={item.id} href={navigationHref(item.id)} onClick={()=>{closeMobileSidebar();setView(item.id)}} aria-current={view===item.id?"page":undefined} className={cn("flex h-9 w-full items-center gap-2.5 rounded-xl px-2.5 text-xs font-medium transition",view===item.id?"bg-[#e6f0ea] font-semibold text-[#1f664a]":"text-[#66766d] hover:bg-[#f0f4f1] hover:text-[#273c30]")}><item.icon size={16}/><span className="flex-1 text-left">{item.label}</span>{item.badge&&<span className={cn("rounded-full px-1.5 py-0.5 text-[8px] font-bold",item.badge==="New"?"bg-[#f8e6c8] text-[#996010]":"bg-white text-[#708078]")}>{item.badge}</span>}</Link>)}</div>
       </div>)}</nav>

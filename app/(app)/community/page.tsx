@@ -111,7 +111,7 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
     if (reaction.user_id === user.id && reaction.emoji === "heart") reactedByCurrentUser.add(reaction.post_id);
   }
   const [canManageSpaces, canModerate, canEditContent] = await Promise.all([
-    hasOrganizationPermission(organization.id, "workspace.full_access"),
+    hasOrganizationPermission(organization.id, "spaces.manage"),
     hasOrganizationPermission(organization.id, "content.moderate"),
     hasOrganizationPermission(organization.id, "content.edit"),
   ]);

@@ -1,11 +1,18 @@
-import { requireOrganizationRole, verifyUser } from "@/lib/auth/dal";
+import { redirect } from "next/navigation";
+import { getActiveOrganization, hasOrganizationPermission, verifyUser } from "@/lib/auth/dal";
 import { createClient } from "@/lib/supabase/server";
 import { TeamManager } from "@/components/organizations/team-manager";
 import type { TenantRole } from "@/lib/auth/types";
 
 export default async function TeamPage() {
   const user = await verifyUser();
-  const organization = await requireOrganizationRole(["owner", "admin"]);
+  const organization = await getActiveOrganization();
+  if (!organization) redirect("/onboarding");
+  const [canManageMembers, canManageRoles] = await Promise.all([
+    hasOrganizationPermission(organization.id, "members.manage"),
+    hasOrganizationPermission(organization.id, "roles.manage"),
+  ]);
+  if (!canManageMembers && !canManageRoles) redirect("/dashboard");
   const supabase = await createClient();
   const [{ data: membershipRows, error: memberError }, { data: invitations }, { data: auditRows }, { data: accessRoles }, { data: permissionRows }, { data: assignments }] = await Promise.all([
     supabase.from("tenant_memberships").select("user_id, role, status, joined_at, membership_tier").eq("tenant_id", organization.id).order("joined_at"),
@@ -26,6 +33,8 @@ export default async function TeamPage() {
   return <TeamManager
     organizationName={organization.name}
     currentRole={organization.role}
+    canManageMembers={canManageMembers}
+    canManageRoles={canManageRoles}
     currentUserId={user.id}
     members={(membershipRows??[]).map(row=>({ userId:row.user_id, name:nameById.get(row.user_id)||"Member", email:emailById.get(row.user_id)||"Private email", role:row.role as TenantRole, status:row.status, joinedAt:row.joined_at, membershipTier: row.membership_tier, accessRoleIds:(assignments??[]).filter(item=>item.user_id===row.user_id).map(item=>item.role_id) }))}
     accessRoles={(accessRoles??[]).map(role=>({ id:role.id,name:role.name,slug:role.slug,description:role.description??"",isSystem:role.is_system,permissionKeys:(role.tenant_access_role_permissions??[]).map((item:{permission_key:string})=>item.permission_key) }))}

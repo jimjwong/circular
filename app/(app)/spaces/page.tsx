@@ -50,7 +50,7 @@ export default async function SpacesPage({ searchParams }: { searchParams: Promi
   for (const row of postRows ?? []) postCounts.set(row.space_id, (postCounts.get(row.space_id) ?? 0) + 1);
   const accessCounts = new Map<string, number>();
   for (const row of accessRows ?? []) accessCounts.set(row.space_id, (accessCounts.get(row.space_id) ?? 0) + 1);
-  const canManage = await hasOrganizationPermission(organization.id, "workspace.full_access");
+  const canManage = await hasOrganizationPermission(organization.id, "spaces.manage");
   const privateCount = (spaces ?? []).filter((space) => space.visibility === "private").length;
   const query = filters.q?.trim().toLowerCase() ?? "";
   const kind = ["discussion", "chat", "course", "event", "members", "custom"].includes(filters.kind ?? "") ? filters.kind : "all";

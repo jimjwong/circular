@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, Coffee, GraduationCap, Hand, Megaphone, MessagesSquare, Sparkles } from "lucide-react";
 import { createCommunitySpaceFromTemplate } from "@/app/actions/community";
 import { SubmitButton } from "@/components/community/submit-button";
-import { requireOrganizationRole } from "@/lib/auth/dal";
+import { requireOrganizationPermission } from "@/lib/auth/dal";
 
 const templates = [
   { key: "announcements", name: "Announcements", slug: "announcements", description: "Admin-led updates with member replies, compact browsing, and a warm announcement identity.", icon: Megaphone, tags: ["Admin posts", "All members", "List"] },
@@ -13,7 +13,7 @@ const templates = [
 ] as const;
 
 export default async function SpaceTemplatesPage() {
-  const organization = await requireOrganizationRole(["owner", "admin"]);
+  const organization = await requireOrganizationPermission("spaces.manage");
   return <main className="min-h-screen bg-[#f5f7f5] p-4 text-[#18251f] sm:p-8">
     <div className="mx-auto max-w-6xl space-y-6">
       <header className="flex items-center gap-3"><Link href="/spaces" aria-label="Back to spaces" className="grid size-10 place-items-center rounded-xl border border-[#dce5df] bg-white text-[#607168]"><ArrowLeft size={16}/></Link><span className="grid size-10 place-items-center rounded-xl bg-[#183f30] text-white"><Sparkles size={17}/></span><div><p className="text-[10px] font-bold uppercase tracking-[.14em] text-[#397558]">{organization.name}</p><h1 className="font-display text-xl font-bold">Space templates</h1></div></header>

@@ -6,7 +6,7 @@ import { switchOrganization } from "@/app/actions/organizations";
 import { CircularApp } from "@/components/circular-app";
 import type { CurrentUser, OrganizationSummary } from "@/lib/auth/types";
 
-export function AuthenticatedApp({ organizations, activeOrganizationId, currentUser, initialView }: { organizations: OrganizationSummary[]; activeOrganizationId: string; currentUser: CurrentUser; initialView?: string }) {
+export function AuthenticatedApp({ organizations, activeOrganizationId, currentUser, initialView, grantedPermissions }: { organizations: OrganizationSummary[]; activeOrganizationId: string; currentUser: CurrentUser; initialView?: string; grantedPermissions: string[] }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
 
@@ -15,5 +15,5 @@ export function AuthenticatedApp({ organizations, activeOrganizationId, currentU
     startTransition(() => router.refresh());
   }
 
-  return <CircularApp key={initialView ?? "overview"} organizations={organizations} activeOrganizationId={activeOrganizationId} currentUser={currentUser} initialView={initialView} onSwitchOrganization={handleSwitch}/>;
+  return <CircularApp key={initialView ?? "overview"} organizations={organizations} activeOrganizationId={activeOrganizationId} currentUser={currentUser} initialView={initialView} grantedPermissions={grantedPermissions} onSwitchOrganization={handleSwitch}/>;
 }

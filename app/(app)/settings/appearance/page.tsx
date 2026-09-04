@@ -1,15 +1,13 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { ArrowLeft, Palette } from "lucide-react";
-import { getActiveOrganization, hasOrganizationPermission } from "@/lib/auth/dal";
+import { requireOrganizationPermission } from "@/lib/auth/dal";
 import { createClient } from "@/lib/supabase/server";
 import { resolveTheme } from "@/lib/themes";
 import { ThemeEditor } from "@/components/themes/theme-editor";
 
 export default async function AppearanceSettingsPage() {
-  const organization = await getActiveOrganization();
-  if (!organization) redirect("/onboarding");
-  const canManage = await hasOrganizationPermission(organization.id, "workspace.full_access");
+  const organization = await requireOrganizationPermission("settings.manage");
+  const canManage = true;
   const supabase = await createClient();
   const { data } = await supabase.from("tenants").select("theme_preset, theme_config").eq("id", organization.id).single();
   const preset = data?.theme_preset ?? "forest";

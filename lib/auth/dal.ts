@@ -86,6 +86,13 @@ export const hasOrganizationPermission = cache(async (tenantId: string, permissi
   return Boolean(data);
 });
 
+export const getOrganizationPermissions = cache(async (tenantId: string): Promise<string[]> => {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("get_my_tenant_permissions", { check_tenant_id: tenantId });
+  if (error) throw new Error(`Unable to load organization permissions: ${error.message}`);
+  return (data ?? []).map((row: { permission_key: string }) => row.permission_key);
+});
+
 export async function requireOrganizationPermission(permission: string) {
   const organization = await getActiveOrganization();
   if (!organization) redirect("/onboarding");

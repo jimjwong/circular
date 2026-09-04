@@ -4,7 +4,7 @@ import type { Route } from "next";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { getActiveOrganization, requireOrganizationRole, verifyUser } from "@/lib/auth/dal";
+import { getActiveOrganization, requireOrganizationPermission, verifyUser } from "@/lib/auth/dal";
 import { createClient } from "@/lib/supabase/server";
 
 const capacitySchema = z.preprocess(
@@ -59,7 +59,7 @@ function parseEvent(formData: FormData) {
 }
 
 export async function createEvent(formData: FormData) {
-  const [user, organization] = await Promise.all([verifyUser(), requireOrganizationRole(["owner", "admin"])]);
+  const [user, organization] = await Promise.all([verifyUser(), requireOrganizationPermission("events.manage")]);
   if (!["trial", "active"].includes(organization.status)) throw new Error("This organization cannot create events.");
   const event = parseEvent(formData);
   const supabase = await createClient();
@@ -90,7 +90,7 @@ export async function createEvent(formData: FormData) {
 }
 
 export async function updateEvent(formData: FormData) {
-  const organization = await requireOrganizationRole(["owner", "admin"]);
+  const organization = await requireOrganizationPermission("events.manage");
   const eventId = z.string().uuid().parse(formData.get("eventId"));
   const event = parseEvent(formData);
   const supabase = await createClient();
@@ -120,7 +120,7 @@ export async function updateEvent(formData: FormData) {
 }
 
 export async function updateEventVisibility(formData: FormData) {
-  const organization = await requireOrganizationRole(["owner", "admin"]);
+  const organization = await requireOrganizationPermission("events.manage");
   const eventId = z.string().uuid().parse(formData.get("eventId"));
   const hiddenRoles = z.array(z.enum(["moderator", "member"])).parse(formData.getAll("hiddenRoles"));
   const supabase = await createClient();
@@ -132,7 +132,7 @@ export async function updateEventVisibility(formData: FormData) {
 }
 
 export async function setEventStatus(formData: FormData) {
-  const organization = await requireOrganizationRole(["owner", "admin"]);
+  const organization = await requireOrganizationPermission("events.manage");
   const eventId = z.string().uuid().parse(formData.get("eventId"));
   const status = z.enum(["draft", "scheduled", "cancelled", "completed"]).parse(formData.get("status"));
   const supabase = await createClient();
@@ -143,7 +143,7 @@ export async function setEventStatus(formData: FormData) {
 }
 
 export async function deleteEvent(formData: FormData) {
-  const organization = await requireOrganizationRole(["owner", "admin"]);
+  const organization = await requireOrganizationPermission("events.manage");
   const eventId = z.string().uuid().parse(formData.get("eventId"));
   const supabase = await createClient();
   const { error } = await supabase.from("events").delete().eq("id", eventId).eq("tenant_id", organization.id);
@@ -168,7 +168,7 @@ export async function toggleEventRegistration(formData: FormData) {
 }
 
 export async function removeEventAttendee(formData: FormData) {
-  const organization = await requireOrganizationRole(["owner", "admin"]);
+  const organization = await requireOrganizationPermission("events.manage");
   const eventId = z.string().uuid().parse(formData.get("eventId"));
   const userId = z.string().uuid().parse(formData.get("userId"));
   const supabase = await createClient();

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { getActiveOrganization, hasOrganizationPermission, requireOrganizationPermission, requireOrganizationRole, verifyUser } from "@/lib/auth/dal";
+import { getActiveOrganization, hasOrganizationPermission, requireOrganizationPermission, verifyUser } from "@/lib/auth/dal";
 import { createClient } from "@/lib/supabase/server";
 
 const spaceSchema = z.object({
@@ -90,7 +90,7 @@ function assertContentEnabled(status: string) {
 }
 
 export async function createCommunitySpace(formData: FormData) {
-  const organization = await requireOrganizationRole(["owner", "admin"]);
+  const organization = await requireOrganizationPermission("spaces.manage");
   assertContentEnabled(organization.status);
   const parsed = spaceSchema.safeParse({
     name: formData.get("name"),
@@ -126,7 +126,7 @@ export async function createCommunitySpace(formData: FormData) {
 }
 
 export async function createCommunitySpaceGroup(formData: FormData) {
-  const organization = await requireOrganizationRole(["owner", "admin"]);
+  const organization = await requireOrganizationPermission("spaces.manage");
   const parsed = spaceGroupSchema.safeParse({ name: formData.get("name") });
   if (!parsed.success) throw new Error("Enter a group name between 1 and 60 characters.");
   const supabase = await createClient();
@@ -136,7 +136,7 @@ export async function createCommunitySpaceGroup(formData: FormData) {
 }
 
 export async function setCommunitySpaceGroup(formData: FormData) {
-  await requireOrganizationRole(["owner", "admin"]);
+  await requireOrganizationPermission("spaces.manage");
   const spaceId = z.string().uuid().parse(formData.get("spaceId"));
   const rawGroupId = String(formData.get("groupId") ?? "");
   const groupId = rawGroupId ? z.string().uuid().parse(rawGroupId) : null;
@@ -148,7 +148,7 @@ export async function setCommunitySpaceGroup(formData: FormData) {
 }
 
 export async function moveCommunitySpace(formData: FormData) {
-  const organization = await requireOrganizationRole(["owner", "admin"]);
+  const organization = await requireOrganizationPermission("spaces.manage");
   const spaceId = z.string().uuid().parse(formData.get("spaceId"));
   const direction = z.enum(["up", "down"]).parse(formData.get("direction"));
   const supabase = await createClient();
@@ -166,7 +166,7 @@ export async function moveCommunitySpace(formData: FormData) {
 }
 
 export async function updateCommunitySpaceContentPermissions(formData: FormData) {
-  await requireOrganizationRole(["owner", "admin"]);
+  await requireOrganizationPermission("spaces.manage");
   const parsed = contentPermissionSchema.safeParse({
     spaceId: formData.get("spaceId"),
     postingPermission: formData.get("postingPermission"),
@@ -186,7 +186,7 @@ export async function updateCommunitySpaceContentPermissions(formData: FormData)
 }
 
 export async function updateCommunitySpaceLayout(formData: FormData) {
-  await requireOrganizationRole(["owner", "admin"]);
+  await requireOrganizationPermission("spaces.manage");
   const parsed = spaceLayoutSchema.safeParse({
     spaceId: formData.get("spaceId"),
     layout: formData.get("layout"),
@@ -208,7 +208,7 @@ export async function updateCommunitySpaceLayout(formData: FormData) {
 }
 
 export async function updateCommunitySpaceStatus(formData: FormData) {
-  await requireOrganizationRole(["owner", "admin"]);
+  await requireOrganizationPermission("spaces.manage");
   const parsed = spaceStatusSchema.safeParse({ spaceId: formData.get("spaceId"), status: formData.get("status") });
   if (!parsed.success) throw new Error("Choose a valid space status.");
   const supabase = await createClient();
@@ -220,7 +220,7 @@ export async function updateCommunitySpaceStatus(formData: FormData) {
 }
 
 export async function updateCommunitySpaceAppearance(formData: FormData) {
-  await requireOrganizationRole(["owner", "admin"]);
+  await requireOrganizationPermission("spaces.manage");
   const parsed = spaceAppearanceSchema.safeParse({
     spaceId: formData.get("spaceId"),
     icon: formData.get("icon") || "",
@@ -242,7 +242,7 @@ export async function updateCommunitySpaceAppearance(formData: FormData) {
 }
 
 export async function updateCommunitySpaceMembershipMode(formData: FormData) {
-  await requireOrganizationRole(["owner", "admin"]);
+  await requireOrganizationPermission("spaces.manage");
   const parsed = spaceMembershipModeSchema.safeParse({ spaceId: formData.get("spaceId"), membershipMode: formData.get("membershipMode") });
   if (!parsed.success) throw new Error("Choose a valid membership mode.");
   const supabase = await createClient();
@@ -265,7 +265,7 @@ export async function toggleCommunitySpaceMembership(formData: FormData) {
 }
 
 export async function setCommunitySpaceModerator(formData: FormData) {
-  await requireOrganizationRole(["owner", "admin"]);
+  await requireOrganizationPermission("spaces.manage");
   const spaceId = z.string().uuid().parse(formData.get("spaceId"));
   const enabled = z.enum(["true", "false"]).parse(formData.get("enabled")) === "true";
   let userId = String(formData.get("userId") ?? "");
@@ -284,7 +284,7 @@ export async function setCommunitySpaceModerator(formData: FormData) {
 }
 
 export async function createCommunitySpaceFromTemplate(formData: FormData) {
-  const organization = await requireOrganizationRole(["owner", "admin"]);
+  const organization = await requireOrganizationPermission("spaces.manage");
   assertContentEnabled(organization.status);
   const parsed = spaceTemplateSchema.safeParse({ templateKey: formData.get("templateKey"), name: formData.get("name"), slug: formData.get("slug") });
   if (!parsed.success) throw new Error("Enter a valid template name and unique URL slug.");
@@ -410,7 +410,7 @@ export async function deleteCommunityPost(formData: FormData) {
 }
 
 export async function updateCommunitySpace(formData: FormData) {
-  const organization = await requireOrganizationRole(["owner", "admin"]);
+  const organization = await requireOrganizationPermission("spaces.manage");
   const parsed = spaceSettingsSchema.safeParse({
     spaceId: formData.get("spaceId"),
     name: formData.get("name"),
@@ -441,7 +441,7 @@ export async function updateCommunitySpace(formData: FormData) {
 }
 
 export async function setCommunitySpaceMember(formData: FormData) {
-  const organization = await requireOrganizationRole(["owner", "admin"]);
+  const organization = await requireOrganizationPermission("spaces.manage");
   const spaceId = z.string().uuid().parse(formData.get("spaceId"));
   const enabled = z.enum(["true", "false"]).parse(formData.get("enabled")) === "true";
   let userId = String(formData.get("userId") ?? "");

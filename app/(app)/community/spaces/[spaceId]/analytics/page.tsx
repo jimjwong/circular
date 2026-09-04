@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, BarChart3, Heart, MessageCircle, MessagesSquare, Settings, TrendingUp, Users } from "lucide-react";
-import { requireOrganizationRole } from "@/lib/auth/dal";
+import { requireOrganizationPermission } from "@/lib/auth/dal";
 import { createClient } from "@/lib/supabase/server";
 
 function dayKey(value: string) {
@@ -10,7 +10,7 @@ function dayKey(value: string) {
 
 export default async function SpaceAnalyticsPage({ params }: { params: Promise<{ spaceId: string }> }) {
   const { spaceId } = await params;
-  const organization = await requireOrganizationRole(["owner", "admin"]);
+  const organization = await requireOrganizationPermission("analytics.view");
   const supabase = await createClient();
   const { data: space } = await supabase.from("spaces").select("id, name, slug, status").eq("id", spaceId).eq("tenant_id", organization.id).maybeSingle();
   if (!space) notFound();

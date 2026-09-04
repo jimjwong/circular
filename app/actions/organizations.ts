@@ -6,7 +6,7 @@ import type { Route } from "next";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { ACTIVE_TENANT_COOKIE, getOrganizations, requireOrganizationRole, verifyUser } from "@/lib/auth/dal";
+import { ACTIVE_TENANT_COOKIE, getOrganizations, requireOrganizationPermission, requireOrganizationRole, verifyUser } from "@/lib/auth/dal";
 import type { AuthState, TenantRole } from "@/lib/auth/types";
 import { createClient } from "@/lib/supabase/server";
 
@@ -39,13 +39,15 @@ const accessRoleSchema = z.object({
   permissions: z.array(z.string().min(1)),
 });
 
+const updateAccessRoleSchema = accessRoleSchema.extend({ roleId: z.string().uuid() });
+
 export type OrganizationActionState = AuthState & { inviteUrl?: string };
 
 export async function updateCommunitySettings(
   _: OrganizationActionState | undefined,
   formData: FormData,
 ): Promise<OrganizationActionState> {
-  const organization = await requireOrganizationRole(["owner", "admin"]);
+  const organization = await requireOrganizationPermission("settings.manage");
   const parsed = communitySettingsSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
 
@@ -116,7 +118,7 @@ export async function inviteMember(
   _: OrganizationActionState | undefined,
   formData: FormData,
 ): Promise<OrganizationActionState> {
-  const organization = await requireOrganizationRole(["owner", "admin"]);
+  const organization = await requireOrganizationPermission("members.manage");
   const user = await verifyUser();
   const parsed = inviteSchema.safeParse({ email: formData.get("email"), role: formData.get("role") });
   if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
@@ -152,7 +154,7 @@ export async function inviteMember(
 }
 
 export async function revokeInvitation(formData: FormData) {
-  const organization = await requireOrganizationRole(["owner", "admin"]);
+  const organization = await requireOrganizationPermission("members.manage");
   const invitationId = String(formData.get("invitationId") ?? "");
   const supabase = await createClient();
   const { error } = await supabase
@@ -166,15 +168,17 @@ export async function revokeInvitation(formData: FormData) {
 }
 
 export async function updateMember(formData: FormData) {
-  const organization = await requireOrganizationRole(["owner", "admin"]);
+  const organization = await requireOrganizationPermission("members.manage");
   const userId = String(formData.get("userId") ?? "");
   const role = String(formData.get("role") ?? "member") as TenantRole;
   const status = String(formData.get("status") ?? "active");
   if (!(["admin", "moderator", "member"] as string[]).includes(role)) throw new Error("Invalid role.");
   if (!(["active", "suspended"] as string[]).includes(status)) throw new Error("Invalid status.");
-  if (organization.role === "admin" && role === "admin") throw new Error("Only the owner can assign administrators.");
+  if (organization.role !== "owner" && role === "admin") throw new Error("Only the owner can assign administrators.");
 
   const supabase = await createClient();
+  const { data: target } = await supabase.from("tenant_memberships").select("role").eq("tenant_id", organization.id).eq("user_id", userId).single();
+  if (organization.role !== "owner" && target?.role === "admin") throw new Error("Only the owner can change an administrator.");
   const { error } = await supabase
     .from("tenant_memberships")
     .update({ role, status, updated_at: new Date().toISOString() })
@@ -185,7 +189,7 @@ export async function updateMember(formData: FormData) {
 }
 
 export async function updateMemberAccess(formData: FormData) {
-  const organization = await requireOrganizationRole(["owner", "admin"]);
+  const organization = await requireOrganizationPermission("members.manage");
   const parsed = memberAccessSchema.parse({
     userId: formData.get("userId"),
     membershipTier: formData.get("membershipTier"),
@@ -208,7 +212,7 @@ export async function createAccessRole(
   _: OrganizationActionState | undefined,
   formData: FormData,
 ): Promise<OrganizationActionState> {
-  const organization = await requireOrganizationRole(["owner", "admin"]);
+  const organization = await requireOrganizationPermission("roles.manage");
   const parsed = accessRoleSchema.safeParse({
     name: formData.get("name"),
     description: formData.get("description") ?? "",
@@ -227,10 +231,33 @@ export async function createAccessRole(
   return { success: `${parsed.data.name} was created.` };
 }
 
+export async function updateAccessRole(formData: FormData) {
+  const organization = await requireOrganizationPermission("roles.manage");
+  const parsed = updateAccessRoleSchema.parse({
+    roleId: formData.get("roleId"),
+    name: formData.get("name"),
+    description: formData.get("description") ?? "",
+    permissions: formData.getAll("permissions"),
+  });
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("update_tenant_access_role", {
+    check_tenant_id: organization.id,
+    check_role_id: parsed.roleId,
+    role_name: parsed.name,
+    role_description: parsed.description,
+    permission_keys: parsed.permissions,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath("/team");
+  revalidatePath("/dashboard");
+}
+
 export async function removeMember(formData: FormData) {
-  const organization = await requireOrganizationRole(["owner", "admin"]);
+  const organization = await requireOrganizationPermission("members.manage");
   const userId = String(formData.get("userId") ?? "");
   const supabase = await createClient();
+  const { data: target } = await supabase.from("tenant_memberships").select("role").eq("tenant_id", organization.id).eq("user_id", userId).single();
+  if (target?.role === "owner" || (target?.role === "admin" && organization.role !== "owner")) throw new Error("Only the owner can remove an administrator.");
   const { error } = await supabase
     .from("tenant_memberships")
     .delete()

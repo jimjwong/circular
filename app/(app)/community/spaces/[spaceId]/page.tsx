@@ -3,12 +3,12 @@ import { notFound } from "next/navigation";
 import { Archive, ArrowLeft, BarChart3, Eye, LayoutGrid, LockKeyhole, Palette, Settings, UserPlus, Users } from "lucide-react";
 import { setCommunitySpaceGroup, setCommunitySpaceMember, setCommunitySpaceModerator, updateCommunitySpace, updateCommunitySpaceAppearance, updateCommunitySpaceContentPermissions, updateCommunitySpaceLayout, updateCommunitySpaceMembershipMode, updateCommunitySpaceStatus } from "@/app/actions/community";
 import { SubmitButton } from "@/components/community/submit-button";
-import { requireOrganizationRole } from "@/lib/auth/dal";
+import { requireOrganizationPermission } from "@/lib/auth/dal";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function SpaceSettingsPage({ params }: { params: Promise<{ spaceId: string }> }) {
   const { spaceId } = await params;
-  const organization = await requireOrganizationRole(["owner", "admin"]);
+  const organization = await requireOrganizationPermission("spaces.manage");
   const supabase = await createClient();
   const [{ data: space }, { data: groups }, { data: accessRows }, { data: memberships }, { data: moderatorRows }] = await Promise.all([
     supabase.from("spaces").select("id, group_id, name, slug, description, kind, icon, cover_url, accent_color, visibility, minimum_access_tier, membership_mode, posting_permission, commenting_permission, layout, show_right_sidebar, show_members_tab, status").eq("id", spaceId).eq("tenant_id", organization.id).maybeSingle(),

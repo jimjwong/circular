@@ -20,7 +20,7 @@ export default async function EventsPage({ searchParams }: { searchParams: Promi
   const [user, organization] = await Promise.all([verifyUser(), getActiveOrganization()]);
   if (!organization) redirect("/onboarding");
   if (["suspended", "cancelled"].includes(organization.status)) redirect("/organization-unavailable");
-  const canManage = await hasOrganizationPermission(organization.id, "workspace.full_access");
+  const canManage = await hasOrganizationPermission(organization.id, "events.manage");
   const supabase = await createClient();
   const [{ data: events, error }, { data: spaces }, { data: registrations }] = await Promise.all([
     supabase.from("events").select("id, space_id, host_id, title, description, starts_at, ends_at, location_type, location_url, image_url, registration_url, hidden_roles, capacity, status").eq("tenant_id", organization.id).order("starts_at"),

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { requireOrganizationRole } from "@/lib/auth/dal";
+import { requireOrganizationPermission } from "@/lib/auth/dal";
 import { createClient } from "@/lib/supabase/server";
 
 const presetIds = ["forest", "ocean", "sunset", "violet", "rose", "slate", "apss", "custom"] as const;
@@ -25,7 +25,7 @@ const themeSchema = z.object({
 export type ThemeActionState = { message?: string; success?: string; errors?: Record<string, string[]> };
 
 export async function updateWorkspaceTheme(_: ThemeActionState | undefined, formData: FormData): Promise<ThemeActionState> {
-  const organization = await requireOrganizationRole(["owner", "admin"]);
+  const organization = await requireOrganizationPermission("settings.manage");
   const parsed = themeSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
 
