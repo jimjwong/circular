@@ -29,3 +29,85 @@ button { cursor: pointer; }
 .animate-enter { animation: enter .32s ease-out both; }
 @keyframes pulse-soft { 50% { box-shadow: 0 0 0 7px rgba(23,107,77,0); } }
 .live-dot { animation: pulse-soft 1.8s infinite; box-shadow: 0 0 0 0 rgba(23,107,77,.25); }
+
+/* Tenant theme layer. Existing product screens use a deliberately small set of
+   design tokens; these aliases let a saved workspace theme update them all. */
+.theme-shell {
+  color: var(--theme-text);
+  background: var(--theme-background);
+  font-family: var(--theme-body-font);
+}
+.theme-shell .font-display { font-family: var(--theme-heading-font); }
+.theme-card,
+.theme-shell [class~="bg-white"] { background-color: var(--theme-surface) !important; }
+.theme-primary,
+.theme-shell [class~="bg-[#183f30]"],
+.theme-shell [class~="bg-[#173f31]"] { background-color: var(--theme-primary) !important; }
+.theme-shell [class~="hover:bg-[#245841]"]:hover,
+.theme-shell [class~="hover:bg-[#245d46]"]:hover { background-color: var(--theme-primary-hover) !important; }
+.theme-shell [class~="from-[#183f30]"] { --tw-gradient-from: var(--theme-primary) !important; }
+.theme-shell [class~="to-[#245d46]"] { --tw-gradient-to: var(--theme-primary-hover) !important; }
+.theme-soft,
+.theme-shell [class~="bg-[#e8f4ee]"],
+.theme-shell [class~="bg-[#e8f2ec]"],
+.theme-shell [class~="bg-[#e6f0ea]"],
+.theme-shell [class~="bg-[#eaf3ee]"],
+.theme-shell [class~="bg-[#edf3ef]"],
+.theme-shell [class~="bg-[#edf5f1]"] { background-color: color-mix(in srgb, var(--theme-primary) 11%, var(--theme-surface)) !important; }
+.theme-brand-text,
+.theme-shell [class~="text-[#176b4d]"],
+.theme-shell [class~="text-[#183f30]"],
+.theme-shell [class~="text-[#1f664a]"],
+.theme-shell [class~="text-[#22694d]"],
+.theme-shell [class~="text-[#246749]"],
+.theme-shell [class~="text-[#267255]"],
+.theme-shell [class~="text-[#286b50]"],
+.theme-shell [class~="text-[#286f53]"],
+.theme-shell [class~="text-[#2a7657]"],
+.theme-shell [class~="text-[#317657]"],
+.theme-shell [class~="text-[#347457]"],
+.theme-shell [class~="text-[#397258]"],
+.theme-shell [class~="text-[#397558]"] { color: var(--theme-primary) !important; }
+.theme-muted,
+.theme-shell [class~="text-[#607168]"],
+.theme-shell [class~="text-[#66766d]"],
+.theme-shell [class~="text-[#718078]"],
+.theme-shell [class~="text-[#74827a]"],
+.theme-shell [class~="text-[#75837b]"],
+.theme-shell [class~="text-[#7a8880]"],
+.theme-shell [class~="text-[#7b8981]"],
+.theme-shell [class~="text-[#7d8a82]"],
+.theme-shell [class~="text-[#7f8c84]"],
+.theme-shell [class~="text-[#819087]"],
+.theme-shell [class~="text-[#829087]"],
+.theme-shell [class~="text-[#839087]"],
+.theme-shell [class~="text-[#8a968f]"] { color: var(--theme-muted) !important; }
+.theme-card,
+.theme-border,
+.theme-field,
+.theme-divider,
+.theme-icon-button,
+.theme-secondary-button,
+.theme-shell [class~="border-[#dce5df]"],
+.theme-shell [class~="border-[#dce4df]"],
+.theme-shell [class~="border-[#dce4de]"],
+.theme-shell [class~="border-[#dfe6e1]"],
+.theme-shell [class~="border-[#e0e7e2]"],
+.theme-shell [class~="border-[#e1e7e3]"],
+.theme-shell [class~="border-[#e2e8e4]"],
+.theme-shell [class~="border-[#e3e9e5]"],
+.theme-shell [class~="border-[#e8ece9]"],
+.theme-shell [class~="border-[#edf0ee]"],
+.theme-shell [class~="border-[#edf1ee]"] { border-color: var(--theme-border) !important; }
+.theme-shell [class~="ring-[#b9d8c8]"],
+.theme-shell [class~="ring-[#dceee5]"] { --tw-ring-color: color-mix(in srgb, var(--theme-primary) 30%, transparent) !important; }
+.theme-shell [class~="bg-[#f4f7f5]"],
+.theme-shell [class~="bg-[#f5f7f5]"],
+.theme-shell [class~="bg-[#f5f8f6]"],
+.theme-shell [class~="bg-[#f6f8f6]"],
+.theme-shell [class~="bg-[#fafcfb]"] { background-color: var(--theme-background) !important; }
+.theme-topbar { background: color-mix(in srgb, var(--theme-surface) 92%, transparent); border-color: var(--theme-border); }
+.theme-icon-button,
+.theme-secondary-button,
+.theme-field { background-color: var(--theme-surface); color: var(--theme-text); }
+.theme-selected-ring { border-color: var(--theme-primary) !important; box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-primary) 20%, transparent); }

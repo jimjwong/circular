@@ -22,7 +22,8 @@
     "verify:lms": "node --env-file=.env.local scripts/verify-lms.mjs",
     "verify:lms-demo": "node --env-file=.env.local scripts/verify-lms-demo.mjs",
     "verify:demo": "node --env-file=.env.local scripts/verify-demo-community.mjs",
-    "verify:introduction": "node --env-file=.env.local scripts/verify-member-introduction.mjs"
+    "verify:introduction": "node --env-file=.env.local scripts/verify-member-introduction.mjs",
+    "verify:themes": "node --env-file=.env.local scripts/verify-themes.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.5",
