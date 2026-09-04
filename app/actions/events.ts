@@ -23,12 +23,16 @@ const eventSchema = z.object({
   registrationUrl: z.string().trim().url().max(1000).optional(),
   hiddenRoles: z.array(z.enum(["moderator", "member"])).default([]),
   capacity: capacitySchema,
-  status: z.enum(["draft", "scheduled"]),
+  status: z.enum(["draft", "scheduled", "cancelled", "completed"]),
   spaceId: z.string().uuid().optional(),
 });
 
 function eventPath(eventId: string) {
   return `/events/${eventId}` as Route;
+}
+
+function savedEventPath(eventId: string, saved: "event" | "visibility") {
+  return `/events/${eventId}?saved=${saved}` as Route;
 }
 
 function parseEvent(formData: FormData) {
@@ -112,6 +116,19 @@ export async function updateEvent(formData: FormData) {
   if (error) throw new Error(error.message);
   revalidatePath("/events");
   revalidatePath(eventPath(eventId));
+  redirect(savedEventPath(eventId, "event"));
+}
+
+export async function updateEventVisibility(formData: FormData) {
+  const organization = await requireOrganizationRole(["owner", "admin"]);
+  const eventId = z.string().uuid().parse(formData.get("eventId"));
+  const hiddenRoles = z.array(z.enum(["moderator", "member"])).parse(formData.getAll("hiddenRoles"));
+  const supabase = await createClient();
+  const { error } = await supabase.from("events").update({ hidden_roles: hiddenRoles, updated_at: new Date().toISOString() }).eq("id", eventId).eq("tenant_id", organization.id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/events");
+  revalidatePath(eventPath(eventId));
+  redirect(savedEventPath(eventId, "visibility"));
 }
 
 export async function setEventStatus(formData: FormData) {

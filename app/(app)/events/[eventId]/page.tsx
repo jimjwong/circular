@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, CalendarDays, Clock3, ExternalLink, EyeOff, MapPin, Trash2, UserRoundX, Users } from "lucide-react";
-import { deleteEvent, removeEventAttendee, setEventStatus, toggleEventRegistration, updateEvent } from "@/app/actions/events";
+import { ArrowLeft, CalendarDays, CheckCircle2, Clock3, ExternalLink, EyeOff, MapPin, Trash2, UserRoundX, Users } from "lucide-react";
+import { deleteEvent, removeEventAttendee, setEventStatus, toggleEventRegistration, updateEvent, updateEventVisibility } from "@/app/actions/events";
 import { SubmitButton } from "@/components/community/submit-button";
 import { EventDateTimeFields } from "@/components/events/event-date-time-fields";
 import { RealtimeEvents } from "@/components/events/realtime-events";
@@ -23,8 +23,9 @@ function currentTimestamp() {
   return Date.now();
 }
 
-export default async function EventDetailPage({ params }: { params: Promise<{ eventId: string }> }) {
+export default async function EventDetailPage({ params, searchParams }: { params: Promise<{ eventId: string }>; searchParams: Promise<{ saved?: string }> }) {
   const { eventId } = await params;
+  const saved = (await searchParams).saved;
   const [user, organization] = await Promise.all([verifyUser(), getActiveOrganization()]);
   if (!organization) redirect("/onboarding");
   const canManage = ["owner", "admin"].includes(organization.role);
@@ -48,6 +49,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ ev
     <RealtimeEvents tenantId={organization.id}/>
     <div className="mx-auto max-w-6xl">
       <header className="flex items-center gap-3"><Link href="/events" aria-label="Back to events" className="grid size-10 place-items-center rounded-xl border border-[#dce5df] bg-white"><ArrowLeft size={16}/></Link><span className="grid size-10 place-items-center rounded-xl bg-[#183f30] text-white"><CalendarDays size={18}/></span><div><p className="text-[10px] font-bold uppercase tracking-[.14em] text-[#397558]">Event details</p><h1 className="font-display text-xl font-bold">{event.title}</h1></div></header>
+      {saved && <div role="status" className="mt-5 flex items-center gap-2 rounded-2xl border border-[#cfe2d6] bg-[#edf7f1] px-4 py-3 text-xs font-semibold text-[#246749]"><CheckCircle2 size={16}/>{saved === "visibility" ? "Event visibility saved." : "All event changes saved."}</div>}
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,1fr)_330px]">
         <div className="space-y-5">
@@ -60,7 +62,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ ev
             {event.registration_url && <a href={event.registration_url} target="_blank" rel="noreferrer" className="mt-7 inline-flex h-11 items-center gap-2 rounded-xl bg-white px-5 text-xs font-bold text-[#183f30]">Register on the APSS website <ExternalLink size={14}/></a>}</div>
           </section>
 
-          {canManage && <details className="rounded-[22px] border border-[#e0e7e2] bg-white p-5 sm:p-6">
+          {canManage && <details open className="rounded-[22px] border border-[#e0e7e2] bg-white p-5 sm:p-6">
             <summary className="cursor-pointer list-none font-display font-bold">Edit event</summary>
             <form action={updateEvent} className="mt-5 grid gap-4 sm:grid-cols-2">
               <input type="hidden" name="eventId" value={event.id}/>
@@ -72,10 +74,10 @@ export default async function EventDetailPage({ params }: { params: Promise<{ ev
               <label><span className="mb-2 block text-xs font-semibold">External registration URL</span><input type="url" name="registrationUrl" defaultValue={event.registration_url ?? ""} maxLength={1000} className="h-11 w-full rounded-xl border border-[#dce5df] px-3 text-sm"/></label>
               <label><span className="mb-2 block text-xs font-semibold">Capacity</span><input type="number" name="capacity" defaultValue={event.capacity ?? ""} min={Math.max(1, going.length)} max={100000} className="h-11 w-full rounded-xl border border-[#dce5df] px-3 text-sm"/></label>
               <label><span className="mb-2 block text-xs font-semibold">Space</span><select name="spaceId" defaultValue={event.space_id ?? ""} className="h-11 w-full rounded-xl border border-[#dce5df] bg-white px-3 text-sm"><option value="">Community-wide</option>{(spaces ?? []).map(space=><option key={space.id} value={space.id}>{space.name}</option>)}</select></label>
-              <fieldset className="rounded-2xl border border-[#dce5df] p-4 sm:col-span-2"><legend className="px-2 text-xs font-bold">Hide this event from</legend><p className="mt-1 text-[11px] text-[#74827a]">Owners and admins always retain management access.</p><div className="mt-3 flex flex-wrap gap-3"><label className="flex cursor-pointer items-center gap-2 rounded-xl bg-[#f4f7f5] px-3 py-2 text-xs font-semibold"><input type="checkbox" name="hiddenRoles" value="member" defaultChecked={event.hidden_roles.includes("member")} className="size-4 accent-[#2d7658]"/> Members</label><label className="flex cursor-pointer items-center gap-2 rounded-xl bg-[#f4f7f5] px-3 py-2 text-xs font-semibold"><input type="checkbox" name="hiddenRoles" value="moderator" defaultChecked={event.hidden_roles.includes("moderator")} className="size-4 accent-[#2d7658]"/> Moderators</label></div></fieldset>
+              <fieldset className="rounded-2xl border border-[#dce5df] p-4 sm:col-span-2"><legend className="px-2 text-xs font-bold">Hide this event from</legend><p className="mt-1 text-[11px] text-[#74827a]">Owners and admins always retain management access.</p><div className="mt-3 flex flex-wrap gap-3"><label className="flex cursor-pointer items-center gap-2 rounded-xl bg-[#f4f7f5] px-3 py-2 text-xs font-semibold"><input type="checkbox" name="hiddenRoles" value="member" defaultChecked={event.hidden_roles.includes("member")} className="size-4 accent-[#2d7658]"/> Members</label><label className="flex cursor-pointer items-center gap-2 rounded-xl bg-[#f4f7f5] px-3 py-2 text-xs font-semibold"><input type="checkbox" name="hiddenRoles" value="moderator" defaultChecked={event.hidden_roles.includes("moderator")} className="size-4 accent-[#2d7658]"/> Moderators</label></div><button type="submit" formAction={updateEventVisibility} className="mt-3 h-9 rounded-xl border border-[#b9d1c3] bg-white px-4 text-[11px] font-bold text-[#246749]">Save visibility</button></fieldset>
               <label className="sm:col-span-2"><span className="mb-2 block text-xs font-semibold">Description</span><textarea name="description" defaultValue={event.description ?? ""} maxLength={5000} className="min-h-28 w-full rounded-xl border border-[#dce5df] p-3 text-sm"/></label>
-              <input type="hidden" name="status" value={event.status === "draft" ? "draft" : "scheduled"}/>
-              <div className="flex justify-end sm:col-span-2"><SubmitButton className="h-10 rounded-xl bg-[#183f30] px-5 text-xs font-semibold text-white">Save event</SubmitButton></div>
+              <label><span className="mb-2 block text-xs font-semibold">Event status</span><select name="status" defaultValue={event.status} className="h-11 w-full rounded-xl border border-[#dce5df] bg-white px-3 text-sm"><option value="draft">Draft</option><option value="scheduled">Scheduled</option><option value="cancelled">Cancelled</option><option value="completed">Completed</option></select></label>
+              <div className="flex items-end justify-end"><SubmitButton className="h-11 rounded-xl bg-[#183f30] px-5 text-xs font-semibold text-white">Save all changes</SubmitButton></div>
             </form>
           </details>}
         </div>
