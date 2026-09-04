@@ -1,0 +1,2 @@
+-- Phase 1 seed data is created through scripts/seed-local.mjs so Auth users are
+-- provisioned through the supported Supabase Admin API.

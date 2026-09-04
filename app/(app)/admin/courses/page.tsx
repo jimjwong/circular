@@ -1,0 +1,28 @@
+import Link from "next/link";
+import { ArrowLeft, BookOpen, Clock3, GraduationCap, Plus, Settings, Users } from "lucide-react";
+import { createCourse } from "@/app/actions/courses";
+import { CourseFormFields } from "@/components/courses/course-form-fields";
+import { SubmitButton } from "@/components/community/submit-button";
+import { requireOrganizationRole } from "@/lib/auth/dal";
+import { createClient } from "@/lib/supabase/server";
+
+export default async function AdminCoursesPage() {
+  const organization = await requireOrganizationRole(["owner", "admin"]);
+  const supabase = await createClient();
+  const [{ data: courses, error }, { data: modules }, { data: enrollments }] = await Promise.all([
+    supabase.from("courses").select("id, title, slug, description, category, cpd_hours_total, status, access_mode, price_cents, currency, updated_at").eq("tenant_id", organization.id).order("updated_at", { ascending: false }),
+    supabase.from("course_modules").select("course_id").eq("tenant_id", organization.id),
+    supabase.from("course_enrollments").select("course_id, status").eq("tenant_id", organization.id),
+  ]);
+  if (error) throw new Error(error.message);
+  const moduleCounts = new Map<string, number>();
+  const enrollmentCounts = new Map<string, number>();
+  for (const row of modules ?? []) moduleCounts.set(row.course_id, (moduleCounts.get(row.course_id) ?? 0) + 1);
+  for (const row of enrollments ?? []) enrollmentCounts.set(row.course_id, (enrollmentCounts.get(row.course_id) ?? 0) + 1);
+  return <main className="min-h-screen bg-[#f5f7f5] p-4 text-[#18251f] sm:p-8"><div className="mx-auto max-w-6xl space-y-6">
+    <header className="flex items-center gap-3"><Link href="/courses" className="grid size-10 place-items-center rounded-xl border border-[#dce5df] bg-white"><ArrowLeft size={16}/></Link><span className="grid size-10 place-items-center rounded-xl bg-[#183f30] text-white"><GraduationCap size={18}/></span><div><p className="text-[10px] font-bold uppercase tracking-[.14em] text-[#397558]">Learning administration</p><h1 className="font-display text-xl font-bold">Courses</h1></div><Link href="#new-course" className="ml-auto inline-flex h-10 items-center gap-2 rounded-xl bg-[#183f30] px-4 text-xs font-bold text-white"><Plus size={14}/> New course</Link></header>
+    <section className="grid gap-4 sm:grid-cols-3">{[["Courses", courses?.length ?? 0, BookOpen], ["Enrollments", enrollments?.length ?? 0, Users], ["CPD hours offered", (courses ?? []).reduce((sum, course) => sum + Number(course.cpd_hours_total), 0), Clock3]].map(([label, value, Icon]) => { const MetricIcon = Icon as typeof BookOpen; return <div key={String(label)} className="rounded-[20px] border border-[#e0e7e2] bg-white p-5"><div className="flex items-center justify-between"><span className="text-xs text-[#74827a]">{String(label)}</span><MetricIcon size={16} className="text-[#317657]"/></div><b className="font-display mt-3 block text-2xl">{String(value)}</b></div>; })}</section>
+    <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_390px]"><section className="overflow-hidden rounded-[22px] border border-[#e0e7e2] bg-white"><div className="border-b border-[#e8edea] p-5"><h2 className="font-display font-bold">Course library</h2><p className="mt-1 text-xs text-[#7b8981]">Build modules, lessons, completion rules, and credentials.</p></div><div className="divide-y divide-[#edf1ee]">{(courses ?? []).map((course) => <article key={course.id} className="p-5"><div className="flex items-start gap-3"><span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[#e8f2ec] text-[#286b50]"><BookOpen size={18}/></span><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h3 className="font-display font-bold">{course.title}</h3><span className="rounded-full bg-[#eef3f0] px-2 py-1 text-[9px] font-bold capitalize text-[#607168]">{course.status}</span><span className="rounded-full bg-[#f5efe4] px-2 py-1 text-[9px] font-bold text-[#856332]">{course.access_mode}</span></div><p className="mt-1 line-clamp-2 text-xs leading-5 text-[#75837b]">{course.description || "No course description yet."}</p><div className="mt-3 flex flex-wrap gap-4 text-[10px] text-[#839087]"><span>{moduleCounts.get(course.id) ?? 0} modules</span><span>{enrollmentCounts.get(course.id) ?? 0} enrolled</span><span>{Number(course.cpd_hours_total)} CPD hours</span>{course.price_cents > 0 && <span>{course.currency} {(course.price_cents / 100).toFixed(2)}</span>}</div></div></div><div className="mt-4 flex gap-2 pl-0 sm:pl-[56px]"><Link href={`/admin/courses/${course.id}`} className="inline-flex h-9 items-center gap-2 rounded-xl bg-[#183f30] px-3 text-[10px] font-bold text-white"><Settings size={13}/> Author course</Link><Link href={`/courses/${course.slug}`} className="inline-flex h-9 items-center rounded-xl border border-[#dce5df] px-3 text-[10px] font-bold text-[#52675b]">Preview landing page</Link></div></article>)}{!courses?.length && <p className="p-10 text-center text-sm text-[#7b8981]">Create the first course for this organization.</p>}</div></section>
+    <aside id="new-course" className="h-fit scroll-mt-6 rounded-[22px] border border-[#e0e7e2] bg-white p-5"><h2 className="font-display font-bold">Create course</h2><p className="mt-1 text-xs text-[#7b8981]">Start with delivery and credential defaults.</p><form action={createCourse} className="mt-5 grid gap-3 sm:grid-cols-2"><CourseFormFields/><div className="sm:col-span-2"><SubmitButton className="h-11 w-full rounded-xl bg-[#183f30] text-xs font-bold text-white">Create and add modules</SubmitButton></div></form></aside></div>
+  </div></main>;
+}

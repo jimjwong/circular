@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">Professional Learning Badge</title>
+  <desc id="description">Asia Professional Speakers Singapore course completion badge</desc>
+  <metadata>Open Badges 3.0 achievement image for verified professional learning.</metadata>
+  <circle cx="256" cy="256" r="238" fill="#183f30"/>
+  <circle cx="256" cy="256" r="206" fill="#f8f4ea" stroke="#c99a4b" stroke-width="12"/>
+  <path d="M256 112l37 76 84 12-61 59 15 84-75-40-75 40 15-84-61-59 84-12z" fill="#c99a4b"/>
+  <circle cx="256" cy="247" r="66" fill="#183f30"/>
+  <path d="M219 246l25 25 51-55" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="18"/>
+  <path d="M187 352l-25 111 94-48 94 48-25-111" fill="#286b50" stroke="#183f30" stroke-width="8"/>
+</svg>

@@ -1,0 +1,23 @@
+type CourseDefaults = {
+  title?: string; slug?: string; description?: string | null; category?: string | null; cover_url?: string | null;
+  cpd_hours_total?: number; price_cents?: number; currency?: string; access_mode?: string; navigation_mode?: string;
+  completion_percent?: number; certificate_expiry_months?: number | null; status?: string;
+};
+
+export function CourseFormFields({ course = {} }: { course?: CourseDefaults }) {
+  return <>
+    <label className="sm:col-span-2"><span className="mb-1.5 block text-xs font-semibold">Course title</span><input name="title" required minLength={3} maxLength={160} defaultValue={course.title ?? ""} className="h-11 w-full rounded-xl border border-[#dce5df] px-3 text-sm"/></label>
+    <label><span className="mb-1.5 block text-xs font-semibold">URL slug</span><input name="slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" defaultValue={course.slug ?? ""} placeholder="professional-speaking-foundations" className="h-11 w-full rounded-xl border border-[#dce5df] px-3 text-sm"/></label>
+    <label><span className="mb-1.5 block text-xs font-semibold">Category</span><input name="category" maxLength={80} defaultValue={course.category ?? ""} placeholder="Professional Development" className="h-11 w-full rounded-xl border border-[#dce5df] px-3 text-sm"/></label>
+    <label className="sm:col-span-2"><span className="mb-1.5 block text-xs font-semibold">Description</span><textarea name="description" maxLength={5000} defaultValue={course.description ?? ""} className="min-h-28 w-full rounded-xl border border-[#dce5df] p-3 text-sm leading-6"/></label>
+    <label className="sm:col-span-2"><span className="mb-1.5 block text-xs font-semibold">Cover image URL</span><input type="url" name="coverUrl" maxLength={500} defaultValue={course.cover_url ?? ""} placeholder="https://…" className="h-11 w-full rounded-xl border border-[#dce5df] px-3 text-sm"/></label>
+    <label><span className="mb-1.5 block text-xs font-semibold">CPD hours</span><input type="number" name="cpdHours" min={0} max={9999} step="0.25" defaultValue={course.cpd_hours_total ?? 0} className="h-11 w-full rounded-xl border border-[#dce5df] px-3 text-sm"/></label>
+    <label><span className="mb-1.5 block text-xs font-semibold">Completion requirement</span><div className="relative"><input type="number" name="completionPercent" min={1} max={100} defaultValue={course.completion_percent ?? 100} className="h-11 w-full rounded-xl border border-[#dce5df] px-3 pr-8 text-sm"/><span className="absolute right-3 top-3 text-xs text-[#829087]">%</span></div></label>
+    <label><span className="mb-1.5 block text-xs font-semibold">Access</span><select name="accessMode" defaultValue={course.access_mode ?? "free"} className="h-11 w-full rounded-xl border border-[#dce5df] bg-white px-3 text-sm"><option value="free">Free enrollment</option><option value="paid">Paid — dummy checkout</option><option value="private">Private — admin enrollment</option></select></label>
+    <label><span className="mb-1.5 block text-xs font-semibold">Navigation</span><select name="navigationMode" defaultValue={course.navigation_mode ?? "sequential"} className="h-11 w-full rounded-xl border border-[#dce5df] bg-white px-3 text-sm"><option value="sequential">Sequential</option><option value="free">Free navigation</option></select></label>
+    <label><span className="mb-1.5 block text-xs font-semibold">Price in cents</span><input type="number" name="priceCents" min={0} max={100000000} defaultValue={course.price_cents ?? 0} className="h-11 w-full rounded-xl border border-[#dce5df] px-3 text-sm"/></label>
+    <label><span className="mb-1.5 block text-xs font-semibold">Currency</span><input name="currency" required minLength={3} maxLength={3} defaultValue={course.currency ?? "SGD"} className="h-11 w-full rounded-xl border border-[#dce5df] px-3 text-sm uppercase"/></label>
+    <label><span className="mb-1.5 block text-xs font-semibold">Certificate expiry</span><select name="certificateExpiryMonths" defaultValue={course.certificate_expiry_months?.toString() ?? ""} className="h-11 w-full rounded-xl border border-[#dce5df] bg-white px-3 text-sm"><option value="">Never expires</option><option value="12">12 months</option><option value="24">24 months</option><option value="36">36 months</option><option value="60">5 years</option></select></label>
+    <label><span className="mb-1.5 block text-xs font-semibold">Status</span><select name="status" defaultValue={course.status ?? "draft"} className="h-11 w-full rounded-xl border border-[#dce5df] bg-white px-3 text-sm"><option value="draft">Draft</option><option value="published">Published</option><option value="archived">Archived</option></select></label>
+  </>;
+}
