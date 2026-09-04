@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { getActiveOrganization, requireOrganizationRole, verifyUser } from "@/lib/auth/dal";
+import { getActiveOrganization, hasOrganizationPermission, requireOrganizationPermission, requireOrganizationRole, verifyUser } from "@/lib/auth/dal";
 import { createClient } from "@/lib/supabase/server";
 
 const spaceSchema = z.object({
@@ -36,6 +36,7 @@ const attachmentSchema = z.object({
 
 const spaceSettingsSchema = spaceSchema.extend({
   spaceId: z.string().uuid(),
+  minimumAccessTier: z.enum(["guest", "associate", "professional"]),
 });
 
 const spaceGroupSchema = z.object({ name: z.string().trim().min(1).max(60) });
@@ -402,7 +403,7 @@ export async function deleteCommunityPost(formData: FormData) {
   const supabase = await createClient();
   const { data: post } = await supabase.from("posts").select("author_id").eq("id", postId).eq("tenant_id", organization.id).maybeSingle();
   if (!post) throw new Error("The post is unavailable.");
-  if (post.author_id !== user.id && !["owner", "admin", "moderator"].includes(organization.role)) throw new Error("You cannot remove this post.");
+  if (post.author_id !== user.id && !await hasOrganizationPermission(organization.id, "content.moderate")) throw new Error("You cannot remove this post.");
   const { error } = await supabase.from("posts").delete().eq("id", postId).eq("tenant_id", organization.id);
   if (error) throw new Error(error.message);
   revalidatePath("/community");
@@ -417,6 +418,7 @@ export async function updateCommunitySpace(formData: FormData) {
     description: formData.get("description") || undefined,
     kind: formData.get("kind"),
     visibility: formData.get("visibility"),
+    minimumAccessTier: formData.get("minimumAccessTier"),
   });
   if (!parsed.success) throw new Error("Enter valid space settings.");
   const supabase = await createClient();
@@ -429,6 +431,8 @@ export async function updateCommunitySpace(formData: FormData) {
     space_visibility: parsed.data.visibility,
   });
   if (error) throw new Error(error.message);
+  const { error: tierError } = await supabase.from("spaces").update({ minimum_access_tier: parsed.data.minimumAccessTier }).eq("id", parsed.data.spaceId).eq("tenant_id", organization.id);
+  if (tierError) throw new Error(tierError.message);
   revalidatePath("/community");
   revalidatePath(`/community/spaces/${parsed.data.spaceId}`);
   revalidatePath("/spaces");
@@ -470,14 +474,14 @@ export async function updateCommunityPost(formData: FormData) {
   const supabase = await createClient();
   const { data: post } = await supabase.from("posts").select("author_id").eq("id", parsed.data.postId).eq("tenant_id", organization.id).maybeSingle();
   if (!post) throw new Error("The post is unavailable.");
-  if (post.author_id !== user.id && !["owner", "admin"].includes(organization.role)) throw new Error("You cannot edit this post.");
+  if (post.author_id !== user.id && !await hasOrganizationPermission(organization.id, "content.edit")) throw new Error("You cannot edit this post.");
   const { error } = await supabase.from("posts").update({ title: parsed.data.title, body: { text: parsed.data.body }, updated_at: new Date().toISOString() }).eq("id", parsed.data.postId).eq("tenant_id", organization.id);
   if (error) throw new Error(error.message);
   revalidatePath("/community");
 }
 
 export async function setCommunityPostPinned(formData: FormData) {
-  await requireOrganizationRole(["owner", "admin", "moderator"]);
+  await requireOrganizationPermission("content.moderate");
   const postId = z.string().uuid().parse(formData.get("postId"));
   const pinned = z.enum(["true", "false"]).parse(formData.get("pinned")) === "true";
   const supabase = await createClient();
@@ -493,7 +497,7 @@ export async function deleteCommunityComment(formData: FormData) {
   const supabase = await createClient();
   const { data: comment } = await supabase.from("comments").select("author_id").eq("id", commentId).eq("tenant_id", organization.id).maybeSingle();
   if (!comment) throw new Error("The comment is unavailable.");
-  if (comment.author_id !== user.id && !["owner", "admin", "moderator"].includes(organization.role)) throw new Error("You cannot remove this comment.");
+  if (comment.author_id !== user.id && !await hasOrganizationPermission(organization.id, "content.moderate")) throw new Error("You cannot remove this comment.");
   const { error } = await supabase.from("comments").delete().eq("id", commentId).eq("tenant_id", organization.id);
   if (error) throw new Error(error.message);
   revalidatePath("/community");
@@ -512,7 +516,7 @@ export async function registerCommunityAttachment(formData: FormData) {
   const supabase = await createClient();
   const { data: post } = await supabase.from("posts").select("id, author_id").eq("id", parsed.data.postId).eq("tenant_id", organization.id).maybeSingle();
   if (!post) throw new Error("The post is unavailable.");
-  if (post.author_id !== user.id && !["owner", "admin"].includes(organization.role)) throw new Error("Only the post author or an administrator can attach media.");
+  if (post.author_id !== user.id && !await hasOrganizationPermission(organization.id, "content.edit")) throw new Error("Only the post author or an editor can attach media.");
   const { error } = await supabase.from("post_attachments").insert({
     tenant_id: organization.id, post_id: post.id, uploaded_by: user.id, storage_path: parsed.data.storagePath,
     file_name: parsed.data.fileName, content_type: parsed.data.contentType, size_bytes: parsed.data.sizeBytes,
@@ -528,7 +532,7 @@ export async function deleteCommunityAttachment(formData: FormData) {
   const supabase = await createClient();
   const { data: attachment } = await supabase.from("post_attachments").select("id, uploaded_by, storage_path").eq("id", attachmentId).eq("tenant_id", organization.id).maybeSingle();
   if (!attachment) throw new Error("The attachment is unavailable.");
-  if (attachment.uploaded_by !== user.id && !["owner", "admin", "moderator"].includes(organization.role)) throw new Error("You cannot remove this attachment.");
+  if (attachment.uploaded_by !== user.id && !await hasOrganizationPermission(organization.id, "content.moderate")) throw new Error("You cannot remove this attachment.");
   const { error: storageError } = await supabase.storage.from("community-media").remove([attachment.storage_path]);
   if (storageError) throw new Error(storageError.message);
   const { error } = await supabase.from("post_attachments").delete().eq("id", attachment.id);

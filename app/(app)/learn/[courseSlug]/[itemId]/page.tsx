@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, BookOpen, CheckCircle2, ChevronLeft, ChevronRight, Clock3, ExternalLink, FileQuestion, GraduationCap, LockKeyhole, Menu, PlayCircle } from "lucide-react";
 import { LearningControls } from "@/components/courses/learning-controls";
-import { getActiveOrganization, verifyUser } from "@/lib/auth/dal";
+import { getActiveOrganization, hasOrganizationPermission, verifyUser } from "@/lib/auth/dal";
 import { createClient } from "@/lib/supabase/server";
 
 function bodyText(body: unknown) {
@@ -50,7 +50,7 @@ export default async function CoursePlayerPage({ params }: { params: Promise<{ c
   const { data: progressRows } = enrollment ? await supabase.from("course_item_progress").select("module_item_id, status, time_spent_seconds").eq("enrollment_id", enrollment.id) : { data: [] };
   const completedIds = new Set((progressRows ?? []).filter((row) => row.status === "complete").map((row) => row.module_item_id));
   const currentProgress = (progressRows ?? []).find((row) => row.module_item_id === item.id);
-  const canManage = ["owner", "admin"].includes(organization.role) || Boolean(instructor);
+  const canManage = await hasOrganizationPermission(organization.id, "courses.manage_all") || Boolean(instructor);
   const firstIncompleteIndex = items.findIndex((row) => row.is_required && !completedIds.has(row.id));
   const sequentialLimit = firstIncompleteIndex === -1 ? items.length : firstIncompleteIndex;
   const currentIndex = items.findIndex((row) => row.id === item.id);

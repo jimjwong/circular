@@ -16,7 +16,7 @@ import {
 import { SubmitButton } from "@/components/community/submit-button";
 import { MediaUploader } from "@/components/community/media-uploader";
 import { RealtimeRefresh } from "@/components/community/realtime-refresh";
-import { getActiveOrganization, verifyUser } from "@/lib/auth/dal";
+import { getActiveOrganization, hasOrganizationPermission, verifyUser } from "@/lib/auth/dal";
 import { createClient } from "@/lib/supabase/server";
 
 function initials(name: string) {
@@ -110,9 +110,12 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
     reactionCounts.set(reaction.post_id, (reactionCounts.get(reaction.post_id) ?? 0) + 1);
     if (reaction.user_id === user.id && reaction.emoji === "heart") reactedByCurrentUser.add(reaction.post_id);
   }
-  const canManageSpaces = ["owner", "admin"].includes(organization.role);
-  const canModerate = ["owner", "admin", "moderator"].includes(organization.role);
-  const canUseRestrictedContent = ["owner", "admin", "moderator"].includes(organization.role);
+  const [canManageSpaces, canModerate, canEditContent] = await Promise.all([
+    hasOrganizationPermission(organization.id, "workspace.full_access"),
+    hasOrganizationPermission(organization.id, "content.moderate"),
+    hasOrganizationPermission(organization.id, "content.edit"),
+  ]);
+  const canUseRestrictedContent = canModerate;
   const joinedSpaceIds = new Set((ownSpaceMemberships ?? []).map((row) => row.space_id));
   const moderatedSpaceIds = new Set((ownModeratorRows ?? []).map((row) => row.space_id));
   const postableSpaces = (spaces ?? []).filter((space) => space.posting_permission === "members" || canUseRestrictedContent || moderatedSpaceIds.has(space.id));
@@ -163,7 +166,7 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
             const postAttachments = attachmentsByPost.get(post.id) ?? [];
             const authorName = names.get(post.author_id) ?? "Member";
             const canDelete = canModerate || post.author_id === user.id;
-            const canEdit = ["owner", "admin"].includes(organization.role) || post.author_id === user.id;
+            const canEdit = canEditContent || post.author_id === user.id;
             return <article key={post.id} id={`space-${post.space_id}`} className={`rounded-[22px] border border-[#e0e7e2] bg-white ${activeSpace?.layout === "list" ? "p-4" : "p-5 sm:p-6"}`}><div className="flex items-start gap-3"><span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#e4f1ea] text-[10px] font-bold text-[#276b4e]">{initials(authorName)}</span><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><b className="text-sm">{authorName}</b><span className="rounded-full bg-[#eef3f0] px-2 py-1 text-[9px] font-semibold text-[#607168]"># {spaceNames.get(post.space_id) ?? "Space"}</span>{post.is_pinned && <span className="rounded-full bg-[#fff2dc] px-2 py-1 text-[9px] font-semibold text-[#966113]">Pinned</span>}</div><p className="mt-1 text-[10px] text-[#8a968f]">{dateLabel(post.published_at ?? post.created_at)}</p></div><div className="flex gap-1">{canModerate && <form action={setCommunityPostPinned}><input type="hidden" name="postId" value={post.id}/><input type="hidden" name="pinned" value={post.is_pinned ? "false" : "true"}/><button aria-label={post.is_pinned ? `Unpin ${post.title}` : `Pin ${post.title}`} title={post.is_pinned ? "Unpin post" : "Pin post"} className="grid size-8 place-items-center rounded-lg text-[#9aa49e] hover:bg-amber-50 hover:text-amber-600"><Pin size={14} fill={post.is_pinned ? "currentColor" : "none"}/></button></form>}{canDelete && <form action={deleteCommunityPost}><input type="hidden" name="postId" value={post.id}/><button aria-label={`Delete ${post.title}`} title="Delete post" className="grid size-8 place-items-center rounded-lg text-[#9aa49e] hover:bg-rose-50 hover:text-rose-600"><Trash2 size={14}/></button></form>}</div></div><h2 className={`font-display font-bold ${activeSpace?.layout === "list" ? "mt-3 text-base" : "mt-5 text-lg"}`}>{post.title}</h2><p className={`mt-2 whitespace-pre-wrap text-sm text-[#5f6f66] ${activeSpace?.layout === "list" ? "line-clamp-2 leading-5" : "leading-6"}`}>{bodyText(post.body)}</p>
               {postAttachments.length > 0 && <div className="mt-4 grid gap-2 sm:grid-cols-2">{postAttachments.map((attachment) => { const canDeleteAttachment = canModerate || attachment.uploaded_by === user.id; return <div key={attachment.id} className="flex items-center gap-3 rounded-xl border border-[#e2e9e4] bg-[#fafcfb] p-3"><FileText size={17} className="shrink-0 text-[#397258]"/><a href={attachment.signedUrl || "#"} target="_blank" rel="noreferrer" className="min-w-0 flex-1"><span className="block truncate text-xs font-semibold text-[#2f5f49]">{attachment.file_name}</span><span className="text-[9px] text-[#89968f]">{Math.max(1, Math.ceil(attachment.size_bytes / 1024)).toLocaleString()} KB</span></a>{canDeleteAttachment && <form action={deleteCommunityAttachment}><input type="hidden" name="attachmentId" value={attachment.id}/><button aria-label={`Delete ${attachment.file_name}`} className="grid size-7 place-items-center rounded-lg text-[#9aa49e] hover:bg-rose-50 hover:text-rose-600"><Trash2 size={12}/></button></form>}</div>; })}</div>}
               {canEdit && <><details className="mt-4 rounded-xl border border-[#e6ece8] bg-[#fafbfa] p-3"><summary className="flex cursor-pointer list-none items-center gap-2 text-xs font-semibold text-[#557064]"><Pencil size={13}/> Edit post</summary><form action={updateCommunityPost} className="mt-3 space-y-2"><input type="hidden" name="postId" value={post.id}/><input name="title" defaultValue={post.title ?? ""} required minLength={3} maxLength={160} className="h-10 w-full rounded-xl border border-[#dce5df] bg-white px-3 text-xs"/><textarea name="body" defaultValue={bodyText(post.body)} required maxLength={10000} className="min-h-24 w-full rounded-xl border border-[#dce5df] bg-white p-3 text-xs leading-5"/><div className="flex justify-end"><SubmitButton className="h-9 rounded-xl bg-[#183f30] px-4 text-xs font-semibold text-white">Save post</SubmitButton></div></form></details><MediaUploader tenantId={organization.id} userId={user.id} postId={post.id}/></>}

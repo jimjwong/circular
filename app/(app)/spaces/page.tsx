@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { ArrowDown, ArrowLeft, ArrowUp, Coffee, Eye, FileText, GraduationCap, Hand, Hash, LockKeyhole, Megaphone, MessageCircle, Plus, Search, Settings, SlidersHorizontal, Sparkles, Users } from "lucide-react";
 import { createCommunitySpace, createCommunitySpaceGroup, moveCommunitySpace } from "@/app/actions/community";
 import { SubmitButton } from "@/components/community/submit-button";
-import { getActiveOrganization, verifyUser } from "@/lib/auth/dal";
+import { getActiveOrganization, hasOrganizationPermission, verifyUser } from "@/lib/auth/dal";
 import { createClient } from "@/lib/supabase/server";
 
 function SpaceIcon({ value }: { value: string | null }) {
@@ -50,7 +50,7 @@ export default async function SpacesPage({ searchParams }: { searchParams: Promi
   for (const row of postRows ?? []) postCounts.set(row.space_id, (postCounts.get(row.space_id) ?? 0) + 1);
   const accessCounts = new Map<string, number>();
   for (const row of accessRows ?? []) accessCounts.set(row.space_id, (accessCounts.get(row.space_id) ?? 0) + 1);
-  const canManage = ["owner", "admin"].includes(organization.role);
+  const canManage = await hasOrganizationPermission(organization.id, "workspace.full_access");
   const privateCount = (spaces ?? []).filter((space) => space.visibility === "private").length;
   const query = filters.q?.trim().toLowerCase() ?? "";
   const kind = ["discussion", "chat", "course", "event", "members", "custom"].includes(filters.kind ?? "") ? filters.kind : "all";

@@ -3,13 +3,13 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Award, Download, ExternalLink, ShieldCheck, XCircle } from "lucide-react";
 import { saveCourseBadge, setCertificateRevocation } from "@/app/actions/courses";
 import { SubmitButton } from "@/components/community/submit-button";
-import { getActiveOrganization } from "@/lib/auth/dal";
+import { getActiveOrganization, hasOrganizationPermission } from "@/lib/auth/dal";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function CourseCredentialsPage({ params }: { params: Promise<{ courseId: string }> }) {
   const { courseId } = await params;
   const organization = await getActiveOrganization();
-  if (!organization || !["owner", "admin"].includes(organization.role)) notFound();
+  if (!organization || !await hasOrganizationPermission(organization.id, "courses.manage_all")) notFound();
   const supabase = await createClient();
   const [{ data: course }, { data: certificates }, { data: badge }] = await Promise.all([
     supabase.from("courses").select("id, title").eq("id", courseId).eq("tenant_id", organization.id).maybeSingle(),

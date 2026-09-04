@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { getActiveOrganization, requireOrganizationRole, verifyUser } from "@/lib/auth/dal";
+import { getActiveOrganization, hasOrganizationPermission, requireOrganizationPermission, verifyUser } from "@/lib/auth/dal";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { signBadgeAward } from "@/lib/badges/open-badge";
@@ -18,6 +18,7 @@ const courseSchema = z.object({
   priceCents: z.coerce.number().int().min(0).max(100000000),
   currency: z.string().trim().length(3).transform((value) => value.toUpperCase()),
   accessMode: z.enum(["free", "paid", "private"]),
+  minimumAccessTier: z.enum(["guest", "associate", "professional"]),
   navigationMode: z.enum(["sequential", "free"]),
   completionPercent: z.coerce.number().int().min(1).max(100),
   certificateExpiryMonths: z.union([z.literal(""), z.coerce.number().int().min(1).max(120)]),
@@ -57,7 +58,7 @@ async function requireCourseManager(courseId: string) {
   const supabase = await createClient();
   const { data: course } = await supabase.from("courses").select("id, slug").eq("id", courseId).eq("tenant_id", organization.id).maybeSingle();
   if (!course) throw new Error("The course is unavailable.");
-  if (!["owner", "admin"].includes(organization.role)) {
+  if (!await hasOrganizationPermission(organization.id, "courses.manage_all")) {
     const { data: assignment } = await supabase.from("course_instructors").select("course_id").eq("course_id", courseId).eq("user_id", user.id).maybeSingle();
     if (!assignment) throw new Error("Course manager access is required.");
   }
@@ -65,7 +66,7 @@ async function requireCourseManager(courseId: string) {
 }
 
 export async function createCourse(formData: FormData) {
-  const [organization, user] = await Promise.all([requireOrganizationRole(["owner", "admin"]), verifyUser()]);
+  const [organization, user] = await Promise.all([requireOrganizationPermission("courses.create"), verifyUser()]);
   const parsed = courseSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) throw new Error("Enter valid course details, pricing, progress, and certificate settings.");
   const supabase = await createClient();
@@ -73,7 +74,7 @@ export async function createCourse(formData: FormData) {
     tenant_id: organization.id, created_by: user.id, title: parsed.data.title, slug: parsed.data.slug,
     description: parsed.data.description || null, category: parsed.data.category || null, cover_url: parsed.data.coverUrl || null,
     cpd_hours_total: parsed.data.cpdHours, price_cents: parsed.data.priceCents, currency: parsed.data.currency,
-    access_mode: parsed.data.accessMode, navigation_mode: parsed.data.navigationMode, completion_percent: parsed.data.completionPercent,
+    access_mode: parsed.data.accessMode, minimum_access_tier: parsed.data.minimumAccessTier, navigation_mode: parsed.data.navigationMode, completion_percent: parsed.data.completionPercent,
     certificate_expiry_months: parsed.data.certificateExpiryMonths || null, status: parsed.data.status,
   }).select("id").single();
   if (error) throw new Error(error.message);
@@ -90,7 +91,7 @@ export async function updateCourse(formData: FormData) {
   const { error } = await supabase.from("courses").update({
     title: parsed.data.title, slug: parsed.data.slug, description: parsed.data.description || null, category: parsed.data.category || null,
     cover_url: parsed.data.coverUrl || null, cpd_hours_total: parsed.data.cpdHours, price_cents: parsed.data.priceCents,
-    currency: parsed.data.currency, access_mode: parsed.data.accessMode, navigation_mode: parsed.data.navigationMode,
+    currency: parsed.data.currency, access_mode: parsed.data.accessMode, minimum_access_tier: parsed.data.minimumAccessTier, navigation_mode: parsed.data.navigationMode,
     completion_percent: parsed.data.completionPercent, certificate_expiry_months: parsed.data.certificateExpiryMonths || null,
     status: parsed.data.status, updated_at: new Date().toISOString(),
   }).eq("id", courseId);
@@ -101,7 +102,7 @@ export async function updateCourse(formData: FormData) {
 }
 
 export async function deleteCourse(formData: FormData) {
-  await requireOrganizationRole(["owner", "admin"]);
+  await requireOrganizationPermission("courses.manage_all");
   const courseId = z.string().uuid().parse(formData.get("courseId"));
   const { supabase } = await requireCourseManager(courseId);
   const { error } = await supabase.from("courses").delete().eq("id", courseId);
@@ -174,7 +175,7 @@ export async function deleteModuleItem(formData: FormData) {
 }
 
 export async function setCourseInstructor(formData: FormData) {
-  const organization = await requireOrganizationRole(["owner", "admin"]);
+  const organization = await requireOrganizationPermission("instructors.manage");
   const courseId = z.string().uuid().parse(formData.get("courseId"));
   const enabled = z.enum(["true", "false"]).parse(formData.get("enabled")) === "true";
   const supabase = await createClient();
@@ -260,7 +261,7 @@ export async function submitQuizAnswer(itemId: string, answer: string): Promise<
 }
 
 export async function setCertificateRevocation(formData: FormData) {
-  await requireOrganizationRole(["owner", "admin"]);
+  await requireOrganizationPermission("courses.manage_all");
   const certificateId = z.string().uuid().parse(formData.get("certificateId"));
   const courseId = z.string().uuid().parse(formData.get("courseId"));
   const revoked = z.enum(["true", "false"]).parse(formData.get("revoked")) === "true";

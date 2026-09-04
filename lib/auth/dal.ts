@@ -37,7 +37,7 @@ export const getOrganizations = cache(async (): Promise<OrganizationSummary[]> =
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("tenant_memberships")
-    .select("role, status, tenants!inner(id, name, slug, status, plan)")
+    .select("role, status, tenants!tenant_memberships_tenant_id_fkey!inner(id, name, slug, status, plan)")
     .eq("user_id", user.id)
     .eq("status", "active");
 
@@ -68,7 +68,27 @@ export async function getActiveOrganization() {
 export async function requireOrganizationRole(allowedRoles: TenantRole[]) {
   const organization = await getActiveOrganization();
   if (!organization) redirect("/onboarding");
-  if (!allowedRoles.includes(organization.role)) redirect("/dashboard");
+  if (!allowedRoles.includes(organization.role)) {
+    const fullAccess = allowedRoles.includes("admin") && await hasOrganizationPermission(organization.id, "workspace.full_access");
+    if (!fullAccess) redirect("/dashboard");
+  }
+  return organization;
+}
+
+export const hasOrganizationPermission = cache(async (tenantId: string, permission: string): Promise<boolean> => {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("has_tenant_permission", {
+    check_tenant_id: tenantId,
+    check_permission: permission,
+  });
+  if (error) throw new Error(`Unable to verify organization permission: ${error.message}`);
+  return Boolean(data);
+});
+
+export async function requireOrganizationPermission(permission: string) {
+  const organization = await getActiveOrganization();
+  if (!organization) redirect("/onboarding");
+  if (!await hasOrganizationPermission(organization.id, permission)) redirect("/dashboard");
   return organization;
 }
 

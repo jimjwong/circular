@@ -10,11 +10,12 @@ const supabase = createClient(url, secret, { auth: { autoRefreshToken: false, pe
 const password = "Demo123!";
 const accountSpecs = [
   { key: "platform", email: "superadmin@circular.demo", name: "Sam Platform", role: null, headline: "Circular platform owner", score: 100 },
-  { key: "owner", email: "owner@circular.demo", name: "Olivia Owner", role: "owner", headline: "Community founder", score: 94 },
-  { key: "admin", email: "admin@circular.demo", name: "Aiden Admin", role: "admin", headline: "Community operations", score: 88 },
-  { key: "moderator", email: "moderator@circular.demo", name: "Maya Moderator", role: "moderator", headline: "Community guide", score: 82 },
-  { key: "member", email: "member@circular.demo", name: "Morgan Member", role: "member", headline: "Independent creator", score: 68 },
-  { key: "student", email: "student@circular.demo", name: "Taylor Student", role: "member", headline: "Creator OS student", score: 53 },
+  { key: "owner", email: "owner@circular.demo", name: "Olivia Owner", role: "owner", tier: "professional", headline: "Community founder", score: 94 },
+  { key: "admin", email: "admin@circular.demo", name: "Aiden Admin", role: "admin", tier: "professional", headline: "Community operations", score: 88 },
+  { key: "moderator", email: "moderator@circular.demo", name: "Maya Moderator", role: "moderator", tier: "professional", headline: "Community guide", score: 82 },
+  { key: "member", email: "member@circular.demo", name: "Morgan Member", role: "member", tier: "associate", headline: "Independent creator", score: 68 },
+  { key: "student", email: "student@circular.demo", name: "Taylor Student", role: "member", tier: "professional", headline: "Creator OS student", score: 53 },
+  { key: "guest", email: "guest@circular.demo", name: "Gabi Guest", role: "member", tier: "guest", headline: "Open House visitor", score: 12 },
 ];
 
 const { data: listed, error: listError } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
@@ -51,18 +52,19 @@ if (!tenant) {
 }
 
 for (const spec of accountSpecs.filter(spec=>spec.role)) {
-  const { error } = await supabase.from("tenant_memberships").upsert({ tenant_id: tenant.id, user_id: accounts[spec.key].id, role: spec.role, headline: spec.headline, activity_score: spec.score, status: "active", invited_by: spec.key === "owner" ? null : accounts.owner.id, updated_at: new Date().toISOString() });
+  const { error } = await supabase.from("tenant_memberships").upsert({ tenant_id: tenant.id, user_id: accounts[spec.key].id, role: spec.role, membership_tier: spec.tier, headline: spec.headline, activity_score: spec.score, status: "active", invited_by: spec.key === "owner" ? null : accounts.owner.id, updated_at: new Date().toISOString() });
   if (error) throw error;
 }
 const { error: subscriptionError } = await supabase.from("tenant_subscriptions").upsert({ tenant_id: tenant.id, plan_id: "pro", status: "active", billing_provider: "local", updated_at: new Date().toISOString() });
 if (subscriptionError) throw subscriptionError;
 
 const spaceSpecs = [
-  { slug: "announcements", name: "Announcements", description: "Important news and updates from the team.", kind: "discussion", icon: "megaphone", visibility: "members", position: 10 },
-  { slug: "introductions", name: "Introductions", description: "Meet fellow members and share what you are building.", kind: "discussion", icon: "wave", visibility: "members", position: 20 },
-  { slug: "creator-lounge", name: "Creator Lounge", description: "Casual conversation, questions, and daily wins.", kind: "chat", icon: "coffee", visibility: "members", position: 30 },
-  { slug: "leadership-room", name: "Leadership Room", description: "Private planning for the workspace team.", kind: "discussion", icon: "lock", visibility: "private", position: 40 },
-  { slug: "creator-os", name: "Creator OS", description: "Course discussions, exercises, and lesson resources.", kind: "course", icon: "graduation", visibility: "members", position: 50 },
+  { slug: "open-house", name: "Open House", description: "A welcoming preview space for guests and prospective members.", kind: "discussion", icon: "wave", visibility: "members", minimum_access_tier: "guest", position: 5 },
+  { slug: "announcements", name: "Announcements", description: "Important news and updates from the team.", kind: "discussion", icon: "megaphone", visibility: "members", minimum_access_tier: "associate", position: 10 },
+  { slug: "introductions", name: "Introductions", description: "Meet fellow members and share what you are building.", kind: "discussion", icon: "wave", visibility: "members", minimum_access_tier: "associate", position: 20 },
+  { slug: "creator-lounge", name: "Creator Lounge", description: "Casual conversation, questions, and daily wins.", kind: "chat", icon: "coffee", visibility: "members", minimum_access_tier: "associate", position: 30 },
+  { slug: "leadership-room", name: "Leadership Room", description: "Private planning for the workspace team.", kind: "discussion", icon: "lock", visibility: "private", minimum_access_tier: "professional", position: 40 },
+  { slug: "creator-os", name: "Creator OS", description: "Course discussions, exercises, and lesson resources.", kind: "course", icon: "graduation", visibility: "members", minimum_access_tier: "professional", position: 50 },
 ];
 const spaces = {};
 for (const spec of spaceSpecs) {
@@ -76,6 +78,7 @@ const { error: privateMemberCleanupError } = await supabase.from("space_members"
 if (privateMemberCleanupError) throw privateMemberCleanupError;
 
 const postSpecs = [
+  { key: "open-house-welcome", space: "open-house", author: "owner", title: "Welcome to the Open House", text: "Explore this preview, meet the community team, and see what membership can unlock.", pinned: true, hoursAgo: 3 },
   { key: "welcome", space: "announcements", author: "owner", title: "Welcome to Creator Collective", text: "This demo community is populated with realistic roles and activity. Introduce yourself, explore the events, and continue the Creator OS course.", pinned: true, hoursAgo: 48 },
   { key: "intro", space: "introductions", author: "member", title: "What are you building this month?", text: "I am building a small membership program for independent designers. What is everyone else shipping?", pinned: false, hoursAgo: 22 },
   { key: "workflow", space: "creator-lounge", author: "moderator", title: "Share one workflow that saved you time", text: "My best improvement was turning every repeated support answer into a reusable community resource.", pinned: false, hoursAgo: 8 },
@@ -129,15 +132,15 @@ for (const [postKey, accountKey] of [["welcome", "admin"], ["welcome", "member"]
 }
 
 const courseSpecs = [
-  { key: "creator-os", slug: "creator-os", title: "Creator OS", description: "Build a clear offer, an engaged audience, and a repeatable community operating system.", status: "published", space: "creator-os", category: "Creator business", cpd: 6, access: "paid", price: 14900, navigation: "sequential", expiry: 24 },
-  { key: "community-foundations", slug: "community-foundations", title: "Community Foundations", description: "A practical starter program for designing a useful, welcoming member journey.", status: "published", space: "creator-os", category: "Community leadership", cpd: 3, access: "free", price: 0, navigation: "free", expiry: null },
-  { key: "speaker-mastery-lab", slug: "speaker-mastery-lab", title: "Speaker Mastery Lab", description: "A private cohort program for developing a compelling professional keynote.", status: "published", space: "creator-os", category: "Professional speaking", cpd: 8, access: "private", price: 0, navigation: "sequential", expiry: 12 },
+  { key: "creator-os", slug: "creator-os", title: "Creator OS", description: "Build a clear offer, an engaged audience, and a repeatable community operating system.", status: "published", space: "creator-os", tier: "professional", category: "Creator business", cpd: 6, access: "paid", price: 14900, navigation: "sequential", expiry: 24 },
+  { key: "community-foundations", slug: "community-foundations", title: "Community Foundations", description: "A practical starter program for designing a useful, welcoming member journey.", status: "published", space: "creator-os", tier: "associate", category: "Community leadership", cpd: 3, access: "free", price: 0, navigation: "free", expiry: null },
+  { key: "speaker-mastery-lab", slug: "speaker-mastery-lab", title: "Speaker Mastery Lab", description: "A private cohort program for developing a compelling professional keynote.", status: "published", space: "creator-os", tier: "professional", category: "Professional speaking", cpd: 8, access: "private", price: 0, navigation: "sequential", expiry: 12 },
 ];
 const courses = {};
 for (const spec of courseSpecs) {
   let { data } = await supabase.from("courses").select("id").eq("tenant_id", tenant.id).eq("slug", spec.slug).maybeSingle();
   if (!data) ({ data } = await supabase.from("courses").select("id").eq("tenant_id", tenant.id).eq("title", spec.title).maybeSingle());
-  const values = { tenant_id: tenant.id, space_id: spaces[spec.space].id, title: spec.title, slug: spec.slug, description: spec.description, category: spec.category, cpd_hours_total: spec.cpd, price_cents: spec.price, currency: "SGD", access_mode: spec.access, navigation_mode: spec.navigation, completion_percent: 100, certificate_expiry_months: spec.expiry, status: spec.status, created_by: accounts.owner.id, updated_at: new Date().toISOString() };
+  const values = { tenant_id: tenant.id, space_id: spaces[spec.space].id, title: spec.title, slug: spec.slug, description: spec.description, category: spec.category, cpd_hours_total: spec.cpd, price_cents: spec.price, currency: "SGD", access_mode: spec.access, minimum_access_tier: spec.tier, navigation_mode: spec.navigation, completion_percent: 100, certificate_expiry_months: spec.expiry, status: spec.status, created_by: accounts.owner.id, updated_at: new Date().toISOString() };
   if (!data) {
     const result = await supabase.from("courses").insert(values).select("id").single();
     if (result.error) throw result.error;

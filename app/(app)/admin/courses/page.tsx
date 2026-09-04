@@ -3,14 +3,14 @@ import { ArrowLeft, BookOpen, Clock3, GraduationCap, Plus, Settings, Users } fro
 import { createCourse } from "@/app/actions/courses";
 import { CourseFormFields } from "@/components/courses/course-form-fields";
 import { SubmitButton } from "@/components/community/submit-button";
-import { requireOrganizationRole } from "@/lib/auth/dal";
+import { requireOrganizationPermission } from "@/lib/auth/dal";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AdminCoursesPage() {
-  const organization = await requireOrganizationRole(["owner", "admin"]);
+  const organization = await requireOrganizationPermission("courses.create");
   const supabase = await createClient();
   const [{ data: courses, error }, { data: modules }, { data: enrollments }] = await Promise.all([
-    supabase.from("courses").select("id, title, slug, description, category, cpd_hours_total, status, access_mode, price_cents, currency, updated_at").eq("tenant_id", organization.id).order("updated_at", { ascending: false }),
+    supabase.from("courses").select("id, title, slug, description, category, cpd_hours_total, status, access_mode, minimum_access_tier, price_cents, currency, updated_at").eq("tenant_id", organization.id).order("updated_at", { ascending: false }),
     supabase.from("course_modules").select("course_id").eq("tenant_id", organization.id),
     supabase.from("course_enrollments").select("course_id, status").eq("tenant_id", organization.id),
   ]);

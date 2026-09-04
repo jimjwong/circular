@@ -1,7 +1,7 @@
 type CourseDefaults = {
   title?: string; slug?: string; description?: string | null; category?: string | null; cover_url?: string | null;
   cpd_hours_total?: number; price_cents?: number; currency?: string; access_mode?: string; navigation_mode?: string;
-  completion_percent?: number; certificate_expiry_months?: number | null; status?: string;
+  completion_percent?: number; certificate_expiry_months?: number | null; status?: string; minimum_access_tier?: string;
 };
 
 export function CourseFormFields({ course = {} }: { course?: CourseDefaults }) {
@@ -14,6 +14,7 @@ export function CourseFormFields({ course = {} }: { course?: CourseDefaults }) {
     <label><span className="mb-1.5 block text-xs font-semibold">CPD hours</span><input type="number" name="cpdHours" min={0} max={9999} step="0.25" defaultValue={course.cpd_hours_total ?? 0} className="h-11 w-full rounded-xl border border-[#dce5df] px-3 text-sm"/></label>
     <label><span className="mb-1.5 block text-xs font-semibold">Completion requirement</span><div className="relative"><input type="number" name="completionPercent" min={1} max={100} defaultValue={course.completion_percent ?? 100} className="h-11 w-full rounded-xl border border-[#dce5df] px-3 pr-8 text-sm"/><span className="absolute right-3 top-3 text-xs text-[#829087]">%</span></div></label>
     <label><span className="mb-1.5 block text-xs font-semibold">Access</span><select name="accessMode" defaultValue={course.access_mode ?? "free"} className="h-11 w-full rounded-xl border border-[#dce5df] bg-white px-3 text-sm"><option value="free">Free enrollment</option><option value="paid">Paid — dummy checkout</option><option value="private">Private — admin enrollment</option></select></label>
+    <label><span className="mb-1.5 block text-xs font-semibold">Membership eligibility</span><select name="minimumAccessTier" defaultValue={course.minimum_access_tier ?? "associate"} className="h-11 w-full rounded-xl border border-[#dce5df] bg-white px-3 text-sm"><option value="guest">Guest, AM, and PM</option><option value="associate">Associate Member (AM) and PM</option><option value="professional">Professional Member (PM) only</option></select></label>
     <label><span className="mb-1.5 block text-xs font-semibold">Navigation</span><select name="navigationMode" defaultValue={course.navigation_mode ?? "sequential"} className="h-11 w-full rounded-xl border border-[#dce5df] bg-white px-3 text-sm"><option value="sequential">Sequential</option><option value="free">Free navigation</option></select></label>
     <label><span className="mb-1.5 block text-xs font-semibold">Price in cents</span><input type="number" name="priceCents" min={0} max={100000000} defaultValue={course.price_cents ?? 0} className="h-11 w-full rounded-xl border border-[#dce5df] px-3 text-sm"/></label>
     <label><span className="mb-1.5 block text-xs font-semibold">Currency</span><input name="currency" required minLength={3} maxLength={3} defaultValue={course.currency ?? "SGD"} className="h-11 w-full rounded-xl border border-[#dce5df] px-3 text-sm uppercase"/></label>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, BookOpen, CheckCircle2, Clock3, GraduationCap, LockKeyhole, PlayCircle, Settings } from "lucide-react";
-import { getActiveOrganization, verifyUser } from "@/lib/auth/dal";
+import { getActiveOrganization, hasOrganizationPermission, verifyUser } from "@/lib/auth/dal";
 import { createClient } from "@/lib/supabase/server";
 import { EnrollmentButton } from "@/components/courses/enrollment-button";
 
@@ -12,12 +12,13 @@ export default async function CourseLandingPage({ params }: { params: Promise<{ 
   const supabase = await createClient();
   const { data: course } = await supabase.from("courses").select("id, title, slug, description, category, cover_url, cpd_hours_total, price_cents, currency, access_mode, navigation_mode, status").eq("tenant_id", organization.id).eq("slug", slug).maybeSingle();
   if (!course) notFound();
-  const [{ data: modules }, { data: items }, { data: enrollment }] = await Promise.all([
+  const [{ data: modules }, { data: items }, { data: enrollment }, { data: instructorAssignment }] = await Promise.all([
     supabase.from("course_modules").select("id, title, description, position, unlock_requirement, unlock_at").eq("course_id", course.id).order("position"),
     supabase.from("module_items").select("id, module_id, title, item_type, estimated_minutes, position, is_preview, is_required").eq("course_id", course.id).order("position"),
     supabase.from("course_enrollments").select("id, status").eq("course_id", course.id).eq("user_id", user.id).maybeSingle(),
+    supabase.from("course_instructors").select("course_id").eq("course_id", course.id).eq("user_id", user.id).maybeSingle(),
   ]);
-  const canManage = ["owner", "admin"].includes(organization.role);
+  const canManage = Boolean(instructorAssignment) || await hasOrganizationPermission(organization.id, "courses.manage_all");
   const hasActiveEnrollment = Boolean(enrollment && ["active", "completed"].includes(enrollment.status));
   const firstItem = (items ?? [])[0];
   const totalMinutes = (items ?? []).reduce((sum, item) => sum + item.estimated_minutes, 0);

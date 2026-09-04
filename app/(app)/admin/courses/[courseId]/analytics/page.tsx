@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Activity, ArrowLeft, BarChart3, CheckCircle2, Clock3, UserPlus, Users } from "lucide-react";
 import { enrollLearnerByEmail, setLearnerEnrollmentStatus } from "@/app/actions/courses";
 import { SubmitButton } from "@/components/community/submit-button";
-import { getActiveOrganization, verifyUser } from "@/lib/auth/dal";
+import { getActiveOrganization, hasOrganizationPermission, verifyUser } from "@/lib/auth/dal";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function CourseAnalyticsPage({ params }: { params: Promise<{ courseId: string }> }) {
@@ -15,7 +15,7 @@ export default async function CourseAnalyticsPage({ params }: { params: Promise<
     supabase.from("courses").select("id, title, slug, completion_percent").eq("id", courseId).eq("tenant_id", organization.id).maybeSingle(),
     supabase.from("course_instructors").select("user_id").eq("course_id", courseId).eq("user_id", user.id).maybeSingle(),
   ]);
-  if (!course || (!["owner", "admin"].includes(organization.role) && !instructor)) notFound();
+  if (!course || (!await hasOrganizationPermission(organization.id, "courses.manage_all") && !instructor)) notFound();
   const [{ data: enrollments }, { data: items }, { data: modules }] = await Promise.all([
     supabase.from("course_enrollments").select("id, user_id, status, enrolled_at, last_accessed_at, completed_at, dropped_at").eq("course_id", course.id).order("enrolled_at", { ascending: false }),
     supabase.from("module_items").select("id, module_id, title, position, is_required").eq("course_id", course.id),

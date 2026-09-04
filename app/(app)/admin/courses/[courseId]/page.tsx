@@ -4,7 +4,7 @@ import { ArrowLeft, Award, BarChart3, BookOpen, ChevronRight, FileQuestion, Grip
 import { createCourseModule, createModuleItem, deleteCourse, deleteCourseModule, deleteModuleItem, setCourseInstructor, updateCourse, updateCourseModule, updateModuleItem } from "@/app/actions/courses";
 import { SubmitButton } from "@/components/community/submit-button";
 import { CourseFormFields } from "@/components/courses/course-form-fields";
-import { getActiveOrganization, verifyUser } from "@/lib/auth/dal";
+import { getActiveOrganization, hasOrganizationPermission, verifyUser } from "@/lib/auth/dal";
 import { createClient } from "@/lib/supabase/server";
 
 function inputDate(value: string | null) {
@@ -45,7 +45,7 @@ export default async function CourseAuthoringPage({ params }: { params: Promise<
   if (!organization) notFound();
   const supabase = await createClient();
   const [{ data: course }, { data: modules }, { data: items }, { data: instructorRows }, { data: memberships }] = await Promise.all([
-    supabase.from("courses").select("id, title, slug, description, category, cover_url, cpd_hours_total, price_cents, currency, access_mode, navigation_mode, completion_percent, certificate_expiry_months, status").eq("id", courseId).eq("tenant_id", organization.id).maybeSingle(),
+    supabase.from("courses").select("id, title, slug, description, category, cover_url, cpd_hours_total, price_cents, currency, access_mode, minimum_access_tier, navigation_mode, completion_percent, certificate_expiry_months, status").eq("id", courseId).eq("tenant_id", organization.id).maybeSingle(),
     supabase.from("course_modules").select("id, title, description, position, unlock_requirement, unlock_at").eq("course_id", courseId).eq("tenant_id", organization.id).order("position"),
     supabase.from("module_items").select("id, module_id, item_type, title, content_url, content_body, estimated_minutes, position, completion_requirement, score_threshold, watch_threshold, is_required, is_preview").eq("course_id", courseId).eq("tenant_id", organization.id).order("position"),
     supabase.from("course_instructors").select("user_id, created_at").eq("course_id", courseId).eq("tenant_id", organization.id),
@@ -53,12 +53,13 @@ export default async function CourseAuthoringPage({ params }: { params: Promise<
   ]);
   if (!course) notFound();
   const assigned = instructorRows?.some((row) => row.user_id === user.id);
-  const canManage = ["owner", "admin"].includes(organization.role) || assigned;
+  const canManageAll = await hasOrganizationPermission(organization.id, "courses.manage_all");
+  const canManage = canManageAll || assigned;
   if (!canManage) notFound();
   const profileIds = [...new Set([...(instructorRows ?? []).map((row) => row.user_id), ...(memberships ?? []).map((row) => row.user_id)])];
   const { data: profiles } = profileIds.length ? await supabase.from("profiles").select("id, display_name, email").in("id", profileIds) : { data: [] };
   const profileMap = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
-  const isAdmin = ["owner", "admin"].includes(organization.role);
+  const isAdmin = canManageAll;
 
   return <main className="min-h-screen bg-[#f5f7f5] p-4 text-[#18251f] sm:p-8"><div className="mx-auto max-w-6xl space-y-6">
     <header className="flex flex-wrap items-center gap-3"><Link href="/admin/courses" className="grid size-10 place-items-center rounded-xl border border-[#dce5df] bg-white"><ArrowLeft size={16}/></Link><span className="grid size-10 place-items-center rounded-xl bg-[#183f30] text-white"><Settings size={18}/></span><div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-[.14em] text-[#397558]">Course authoring</p><h1 className="font-display truncate text-xl font-bold">{course.title}</h1></div><div className="ml-auto flex gap-2"><Link href={`/admin/courses/${course.id}/analytics`} className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#dce5df] bg-white px-3 text-xs font-bold text-[#52675b]"><BarChart3 size={14}/> Analytics</Link>{isAdmin && <Link href={`/admin/courses/${course.id}/credentials`} className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#dce5df] bg-white px-3 text-xs font-bold text-[#52675b]"><Award size={14}/> Credentials</Link>}<Link href={`/courses/${course.slug}`} className="inline-flex h-10 items-center gap-1 rounded-xl border border-[#dce5df] bg-white px-3 text-xs font-bold text-[#52675b]">Preview <ChevronRight size={13}/></Link></div></header>

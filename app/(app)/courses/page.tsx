@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, BookOpen, Clock3, GraduationCap, LockKeyhole, Settings, Users } from "lucide-react";
-import { getActiveOrganization, verifyUser } from "@/lib/auth/dal";
+import { getActiveOrganization, hasOrganizationPermission, verifyUser } from "@/lib/auth/dal";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function CourseCatalogPage() {
@@ -16,7 +16,7 @@ export default async function CourseCatalogPage() {
   ]);
   if (error) throw new Error(error.message);
   const enrollmentMap = new Map((enrollments ?? []).map((row) => [row.course_id, row.status]));
-  const canManage = ["owner", "admin"].includes(organization.role);
+  const canManage = await hasOrganizationPermission(organization.id, "courses.create");
   return <main className="min-h-screen bg-[#f5f7f5] p-4 text-[#18251f] sm:p-8"><div className="mx-auto max-w-6xl space-y-6">
     <header className="flex flex-wrap items-center gap-3"><Link href="/dashboard" className="grid size-10 place-items-center rounded-xl border border-[#dce5df] bg-white"><ArrowLeft size={16}/></Link><span className="grid size-10 place-items-center rounded-xl bg-[#183f30] text-white"><GraduationCap size={18}/></span><div><p className="text-[10px] font-bold uppercase tracking-[.14em] text-[#397558]">{organization.name}</p><h1 className="font-display text-xl font-bold">Course catalog</h1></div><div className="ml-auto flex gap-2"><Link href="/learning" className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#183f30] px-3 text-xs font-bold text-white"><GraduationCap size={14}/> My learning</Link>{canManage && <Link href="/admin/courses" className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#dce5df] bg-white px-3 text-xs font-bold text-[#52675b]"><Settings size={14}/> Manage courses</Link>}</div></header>
     <section className="rounded-[24px] bg-gradient-to-br from-[#183f30] to-[#2d7658] p-7 text-white sm:p-9"><span className="text-[10px] font-bold uppercase tracking-[.16em] text-[#a9cfbc]">Professional learning</span><h2 className="font-display mt-2 max-w-2xl text-3xl font-bold tracking-[-.03em]">Build skills and earn verifiable CPD credentials.</h2><p className="mt-3 max-w-2xl text-sm leading-6 text-[#d0e0d8]">Structured modules, measurable progress, auditable learning hours, certificates, and Open Badges.</p></section>

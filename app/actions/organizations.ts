@@ -20,6 +20,18 @@ const inviteSchema = z.object({
   role: z.enum(["admin", "moderator", "member"]),
 });
 
+const memberAccessSchema = z.object({
+  userId: z.string().uuid(),
+  membershipTier: z.enum(["guest", "associate", "professional"]),
+  roleIds: z.array(z.string().uuid()),
+});
+
+const accessRoleSchema = z.object({
+  name: z.string().trim().min(2, "Enter a role name."),
+  description: z.string().trim().max(240),
+  permissions: z.array(z.string().min(1)),
+});
+
 export type OrganizationActionState = AuthState & { inviteUrl?: string };
 
 export async function createOrganization(
@@ -135,6 +147,49 @@ export async function updateMember(formData: FormData) {
     .eq("user_id", userId);
   if (error) throw new Error(error.message);
   revalidatePath("/team");
+}
+
+export async function updateMemberAccess(formData: FormData) {
+  const organization = await requireOrganizationRole(["owner", "admin"]);
+  const parsed = memberAccessSchema.parse({
+    userId: formData.get("userId"),
+    membershipTier: formData.get("membershipTier"),
+    roleIds: formData.getAll("roleIds"),
+  });
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_member_access", {
+    check_tenant_id: organization.id,
+    target_user_id: parsed.userId,
+    next_tier: parsed.membershipTier,
+    role_ids: parsed.roleIds,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath("/team");
+  revalidatePath("/courses");
+  revalidatePath("/community");
+}
+
+export async function createAccessRole(
+  _: OrganizationActionState | undefined,
+  formData: FormData,
+): Promise<OrganizationActionState> {
+  const organization = await requireOrganizationRole(["owner", "admin"]);
+  const parsed = accessRoleSchema.safeParse({
+    name: formData.get("name"),
+    description: formData.get("description") ?? "",
+    permissions: formData.getAll("permissions"),
+  });
+  if (!parsed.success) return { errors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("create_tenant_access_role", {
+    check_tenant_id: organization.id,
+    role_name: parsed.data.name,
+    role_description: parsed.data.description,
+    permission_keys: parsed.data.permissions,
+  });
+  if (error) return { message: error.code === "23505" ? "A role with that name already exists." : error.message };
+  revalidatePath("/team");
+  return { success: `${parsed.data.name} was created.` };
 }
 
 export async function removeMember(formData: FormData) {

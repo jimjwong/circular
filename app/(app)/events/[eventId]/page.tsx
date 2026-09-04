@@ -5,7 +5,7 @@ import { deleteEvent, removeEventAttendee, setEventStatus, toggleEventRegistrati
 import { SubmitButton } from "@/components/community/submit-button";
 import { EventDateTimeFields } from "@/components/events/event-date-time-fields";
 import { RealtimeEvents } from "@/components/events/realtime-events";
-import { getActiveOrganization, verifyUser } from "@/lib/auth/dal";
+import { getActiveOrganization, hasOrganizationPermission, verifyUser } from "@/lib/auth/dal";
 import { createClient } from "@/lib/supabase/server";
 
 function eventDate(value: string) {
@@ -28,7 +28,7 @@ export default async function EventDetailPage({ params, searchParams }: { params
   const saved = (await searchParams).saved;
   const [user, organization] = await Promise.all([verifyUser(), getActiveOrganization()]);
   if (!organization) redirect("/onboarding");
-  const canManage = ["owner", "admin"].includes(organization.role);
+  const canManage = await hasOrganizationPermission(organization.id, "workspace.full_access");
   const supabase = await createClient();
   const [{ data: event }, { data: spaces }, { data: registrations }] = await Promise.all([
     supabase.from("events").select("id, tenant_id, space_id, host_id, title, description, starts_at, ends_at, location_type, location_url, image_url, registration_url, hidden_roles, capacity, status").eq("id", eventId).eq("tenant_id", organization.id).maybeSingle(),
