@@ -7,6 +7,8 @@ const demoEmails = {
   moderator: "moderator@circular.demo",
   member: "member@circular.demo",
   student: "student@circular.demo",
+  corporate: "corporate@circular.demo",
+  guest: "guest@circular.demo",
   superadmin: "superadmin@circular.demo",
 } as const;
 

@@ -15,6 +15,8 @@ const demoAccounts = [
   ["moderator", "Moderator", "moderator@circular.demo"],
   ["member", "Member", "member@circular.demo"],
   ["student", "Student", "student@circular.demo"],
+  ["corporate", "Corporate", "corporate@circular.demo"],
+  ["guest", "Guest", "guest@circular.demo"],
   ["superadmin", "Super admin", "superadmin@circular.demo"],
 ] as const;
 

@@ -15,6 +15,7 @@ const accountSpecs = [
   { key: "moderator", email: "moderator@circular.demo", name: "Maya Moderator", role: "moderator", tier: "professional", headline: "Community guide", score: 82 },
   { key: "member", email: "member@circular.demo", name: "Morgan Member", role: "member", tier: "associate", headline: "Independent creator", score: 68 },
   { key: "student", email: "student@circular.demo", name: "Taylor Student", role: "member", tier: "professional", headline: "Creator OS student", score: 53 },
+  { key: "corporate", email: "corporate@circular.demo", name: "Casey Corporate", role: "member", tier: "corporate", headline: "Corporate learning partner", score: 61 },
   { key: "guest", email: "guest@circular.demo", name: "Gabi Guest", role: "member", tier: "guest", headline: "Open House visitor", score: 12 },
 ];
 

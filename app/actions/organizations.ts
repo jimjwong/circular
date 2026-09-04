@@ -29,7 +29,7 @@ const inviteSchema = z.object({
 
 const memberAccessSchema = z.object({
   userId: z.string().uuid(),
-  membershipTier: z.enum(["guest", "associate", "professional"]),
+  membershipTier: z.enum(["guest", "associate", "professional", "corporate"]),
   roleIds: z.array(z.string().uuid()),
 });
 

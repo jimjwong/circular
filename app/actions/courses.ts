@@ -18,7 +18,7 @@ const courseSchema = z.object({
   priceCents: z.coerce.number().int().min(0).max(100000000),
   currency: z.string().trim().length(3).transform((value) => value.toUpperCase()),
   accessMode: z.enum(["free", "paid", "private"]),
-  minimumAccessTier: z.enum(["guest", "associate", "professional"]),
+  minimumAccessTier: z.enum(["guest", "associate", "professional", "corporate"]),
   navigationMode: z.enum(["sequential", "free"]),
   completionPercent: z.coerce.number().int().min(1).max(100),
   certificateExpiryMonths: z.union([z.literal(""), z.coerce.number().int().min(1).max(120)]),

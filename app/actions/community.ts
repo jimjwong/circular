@@ -36,7 +36,7 @@ const attachmentSchema = z.object({
 
 const spaceSettingsSchema = spaceSchema.extend({
   spaceId: z.string().uuid(),
-  minimumAccessTier: z.enum(["guest", "associate", "professional"]),
+  minimumAccessTier: z.enum(["guest", "associate", "professional", "corporate"]),
 });
 
 const spaceGroupSchema = z.object({ name: z.string().trim().min(1).max(60) });
