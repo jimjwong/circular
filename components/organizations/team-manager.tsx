@@ -61,7 +61,7 @@ function MemberRow({ member, currentRole, canManageMembers, isCurrentUser, acces
       {canEdit&&<div className="flex"><form action={removeMember}><input type="hidden" name="userId" value={member.userId}/><button title="Remove member" className="grid size-9 place-items-center rounded-xl text-[#a25b49] hover:bg-[#fff0ec]"><Trash2 size={15}/></button></form>{currentRole==="owner"&&member.status==="active"&&<form action={transferOwnership}><input type="hidden" name="userId" value={member.userId}/><button title="Transfer ownership" className="grid size-9 place-items-center rounded-xl text-[#8b6b31] hover:bg-[#fff5e4]"><Crown size={15}/></button></form>}</div>}
       {!canEdit&&member.role!=="owner"&&<MoreHorizontal size={16} className="text-[#a0aaa4]"/>}
     </div>
-    {canEdit&&<details open className="ml-[52px] mt-3 rounded-xl border border-[#d8e3dd] bg-[#fafcfb] p-3">
+    {canEdit&&<details className="ml-[52px] mt-3 rounded-xl border border-[#d8e3dd] bg-[#fafcfb] p-3">
       <summary className="cursor-pointer text-xs font-bold text-[#315b47]">Assign membership level and roles</summary>
       <form action={updateMemberAccess} className="mt-4 grid gap-4">
         <input type="hidden" name="userId" value={member.userId}/>
