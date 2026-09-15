@@ -135,6 +135,14 @@ function renderDataComponent(instance: Instance, props: RenderedProps, className
         // eslint-disable-next-line @next/next/no-img-element
         return <img className={className} src={src} alt="" loading="lazy" />;
       }
+      const hrefTemplate = typeof props.hrefTemplate === "string" ? props.hrefTemplate.trim() : "";
+      // A CollectionList's per-entry template has no other way to target that same
+      // entry's own detail page — a Link/Button's href is one static string shared by
+      // every repeated entry — so :slug is substituted here, per entry, at render time.
+      if (hrefTemplate && context.entry) {
+        const href = resolveSiteHref(hrefTemplate.replaceAll(":slug", context.entry.slug), context.data);
+        return <a className={className} href={href}>{value}</a>;
+      }
       return <span className={className}>{value}</span>;
     }
     case "PricingTable": {

@@ -43,7 +43,7 @@ const HERO_PHOTO = "https://www.asiaspeakers.org/wp-content/uploads/elementor/th
 // --- Shared building blocks ----------------------------------------------------------
 
 const NAV_LINKS = [
-  ["About", "/about"], ["Speakers", "/speakers"], ["Join APSS", "/join"], ["Contact", "/contact"],
+  ["About", "/about"], ["Speakers", "/speakers"], ["Blog", "/blog"], ["Join APSS", "/join"], ["Contact", "/contact"],
 ];
 
 /** The same orange top bar and logo on every page, mirroring the real site's persistent header. */
@@ -53,15 +53,20 @@ function navBar() {
     style: { "background-color": ORANGE, padding: "16px 24px" },
     children: [{
       component: "Container",
-      style: { "max-width": "1120px", margin: "0 auto", display: "flex", "align-items": "center", "justify-content": "space-between", gap: "20px" },
+      // Mobile-first: wrap onto a second row rather than overflow the viewport (the
+      // builder has no hamburger-menu primitive, so wrapping is the responsive fallback).
+      style: { "max-width": "1120px", margin: "0 auto", display: "flex", "flex-wrap": "wrap", "align-items": "center", "justify-content": "center", "row-gap": "12px", "column-gap": "16px" },
+      desktopStyle: { "justify-content": "space-between" },
       children: [
-        { component: "Image", props: { src: LOGO_URL, alt: "Asia Professional Speakers Singapore" }, style: { height: "44px", width: "auto" } },
+        { component: "Image", props: { src: LOGO_URL, alt: "Asia Professional Speakers Singapore" }, style: { height: "36px", width: "auto" }, desktopStyle: { height: "44px" } },
         {
           component: "Container",
-          style: { display: "flex", gap: "22px" },
+          style: { display: "flex", "flex-wrap": "wrap", "justify-content": "center", gap: "14px" },
+          desktopStyle: { gap: "22px" },
           children: NAV_LINKS.map(([label, href]) => ({
             component: "Link", text: label, props: { href, target: "_self" },
-            style: { color: "#ffffff", "font-weight": "600", "font-size": "13px", "text-decoration": "none" },
+            style: { color: "#ffffff", "font-weight": "600", "font-size": "12px", "text-decoration": "none", "white-space": "nowrap" },
+            desktopStyle: { "font-size": "13px" },
           })),
         },
       ],
@@ -404,6 +409,72 @@ function contactTree() {
   ];
 }
 
+// --- Blog ------------------------------------------------------------------------------
+// One shared card layout for both the listing and, styled slightly larger, the header of
+// an individual post — kept as a function so the two stay visually consistent.
+
+function blogCard(blogCollectionId, { compact }) {
+  return {
+    component: "Container", style: { ...CARD, padding: "0", overflow: "hidden", display: "flex", "flex-direction": "column" },
+    children: [
+      { component: "CollectionField", props: { field: "cover", asImage: true }, style: { width: "100%", height: compact ? "160px" : "220px", "object-fit": "cover", display: "block", "background-color": PAGE_BG } },
+      { component: "Container", style: { padding: "18px", display: "flex", "flex-direction": "column", gap: "6px", flex: "1" }, children: [
+        { component: "CollectionField", props: { field: "categories" }, style: { display: "block", "font-size": "10px", "font-weight": "700", color: TEAL, "text-transform": "uppercase", "letter-spacing": "0.06em" } },
+        { component: "CollectionField", props: { field: "title", hrefTemplate: "/blog/:slug" }, style: { display: "block", "font-size": compact ? "15px" : "17px", "font-weight": "700", color: ORANGE, "text-decoration": "none", "line-height": "1.35", margin: "2px 0" } },
+        { component: "CollectionField", props: { field: "meta" }, style: { display: "block", "font-size": "11px", color: MUTED, "margin-bottom": "4px" } },
+        { component: "CollectionField", props: { field: "excerpt" }, style: { display: "block", "font-size": "13px", color: MUTED, "line-height": "1.6" } },
+      ] },
+    ],
+  };
+}
+
+function blogTree(blogCollectionId) {
+  return [
+    navBar(),
+    {
+      component: "Section", style: { ...SECTION, "background-color": PAGE_BG, "text-align": "center", padding: "56px 24px" },
+      children: [{ component: "Container", children: [
+        { component: "Eyebrow", text: "The APSS blog", style: { color: ORANGE, "font-size": "12px", "font-weight": "700", "letter-spacing": "0.16em", "text-transform": "uppercase" } },
+        { component: "Heading", text: "From our blog", props: { level: "h1" }, style: { ...H2, "font-size": "32px", margin: "12px 0 10px" } },
+        { component: "Text", text: "Read exclusive content from our members here on the blog.", style: { ...BODY, "max-width": "480px", margin: "0 auto" } },
+      ] }],
+    },
+    {
+      component: "Section", style: SECTION,
+      children: [{ component: "Container", style: WRAP, children: [
+        {
+          component: "CollectionList", props: { collectionId: blogCollectionId, limit: 12 },
+          style: { display: "grid", gap: "22px", "grid-template-columns": "1fr" },
+          desktopStyle: { "grid-template-columns": "repeat(3, minmax(0, 1fr))" },
+          children: [blogCard(blogCollectionId, { compact: true })],
+        },
+      ] }],
+    },
+    footer(),
+  ];
+}
+
+/** A single post, reached via the /blog/:slug collection template. */
+function blogPostTree() {
+  return [
+    navBar(),
+    {
+      component: "Section", style: SECTION,
+      children: [{ component: "Container", style: { ...WRAP, "max-width": "760px" }, children: [
+        { component: "CollectionField", props: { field: "categories" }, style: { display: "block", "font-size": "11px", "font-weight": "700", color: TEAL, "text-transform": "uppercase", "letter-spacing": "0.08em", "margin-bottom": "10px" } },
+        { component: "CollectionField", props: { field: "title" }, style: { display: "block", "font-size": "30px", "font-weight": "800", color: INK, "line-height": "1.25", margin: "0 0 10px" } },
+        { component: "CollectionField", props: { field: "meta" }, style: { display: "block", "font-size": "13px", color: MUTED, "margin-bottom": "24px" } },
+        { component: "CollectionField", props: { field: "cover", asImage: true }, style: { width: "100%", "border-radius": "14px", margin: "0 0 28px", "max-height": "420px", "object-fit": "cover" } },
+        { component: "CollectionField", props: { field: "body" }, style: { display: "block", "font-size": "15px", "line-height": "1.8", color: "#3a3a3a", "white-space": "pre-line" } },
+        { component: "Container", style: { "margin-top": "36px", "padding-top": "20px", "border-top": `1px solid ${BORDER}` }, children: [
+          { component: "Link", text: "← Back to the blog", props: { href: "/blog", target: "_self" }, style: { color: ORANGE, "font-weight": "700", "font-size": "13px", "text-decoration": "none" } },
+        ] },
+      ] }],
+    },
+    footer(),
+  ];
+}
+
 // --- Speakers collection ---------------------------------------------------------------
 // Names, credentials, category tags, and photos taken from the APSS speaker directory.
 // Anna Ong is omitted: the directory listing had no photo or category data for her, and
@@ -421,7 +492,7 @@ const SPEAKERS = [
   { name: "Dr. Damini Chawla", slug: "damini-chawla", credentials: "", categories: "Leadership, Conflict Resolution, Communication / Voice", photo: "" },
 ];
 
-async function upsertCollection() {
+async function upsertSpeakersCollection() {
   const payload = {
     site_id: site.id, tenant_id: tenant.id, name: "Speakers", slug: "speakers",
     description: "APSS professional speakers, trainers, and facilitators.",
@@ -450,6 +521,220 @@ async function upsertSpeaker(collectionId, speaker) {
   return supabase.from("website_collection_entries").insert({ ...payload, created_by: userId });
 }
 
+// --- Blog collection ---------------------------------------------------------------
+// Six recent posts from https://www.asiaspeakers.org/blog/, taken from each post's own
+// page (title, author, date, category, cover image, and full body text).
+
+const BLOG_POSTS = [
+  {
+    slug: "beyond-the-agenda-mastering-the-art-of-sensing",
+    title: "BEYOND THE AGENDA: Mastering the Art of Sensing as a Speaker/Facilitator.",
+    author: "Dr. Philip Merry CSP,CSPGlobal, Speaking Fellow", date: "September 5, 2026", categories: "Team Coaching",
+    cover: "https://www.asiaspeakers.org/wp-content/uploads/2026/09/Screenshot-2026-08-29-at-14.02.28-1.png",
+    excerpt: "How facilitators and speakers access intuition and collective intelligence to recognise what a team or audience needs next.",
+    body: `This photograph captures an important moment during a recent divisional team retreat I recently facilitated.
+
+The participants are working together at their tables. I have stepped aside, closed my eyes and become still. I am not disengaged or taking a break. A recent issue that was not on the agenda has just been raised, and I am sensing what to do.
+
+I am listening beneath the words and activity to intuit what the team needs next.
+
+Some might describe this as reading the room. I experience it at a deeper level—as sensing the quantum field of information that surrounds and connects the group.
+
+Facilitation Is More Than Following a Plan
+
+Every effective team retreat needs a clear purpose, thoughtful design and well-chosen activities. But a team is a living human system, not a machine that will automatically follow the facilitator's agenda.
+
+A facilitator may arrive with an excellent plan, yet something unexpected emerges: an uncomfortable silence follows an apparently innocent question, one voice begins to dominate, energy suddenly disappears from the room, a conversation moves away from the agenda to what truly matters, participants become animated around an issue that had seemed unimportant, or a disagreement reveals the real challenge facing the team.
+
+At these moments, facilitators have a choice. We can force the group back onto the predetermined agenda—or pause, sense what is happening and respond to what the team actually needs.
+
+The most important intervention is not always the one written in the facilitator's guide.
+
+What Does It Mean to Sense a Team?
+
+Sensing involves paying attention to several levels of information simultaneously. We listen to what people are saying, but also notice what they are not saying. We observe body language, tone of voice, participation patterns, emotional shifts and changes in the energy of the room.
+
+But sensing goes beyond observation. It means quietening our own internal chatter and becoming receptive to intuition: the subtle inner knowing that may indicate it is time to ask a different question, invite another voice, remain silent, challenge the group—or completely change direction.
+
+Sometimes I will suddenly know that the planned activity is no longer appropriate. At other times, a question arises in my mind that I had not prepared for. When I trust that intuition and ask it, the conversation often moves to the heart of the matter.
+
+This does not mean abandoning experience, evidence or professional judgement. Intuition works alongside them. Decades of facilitation create a deep reservoir of pattern recognition—but there are also moments when we access information through the collective field itself.
+
+From Reading the Room to Sensing the Field
+
+Teams generate more than individual opinions. As people interact, they create a collective emotional and informational field. When a team develops greater coherence—when people become more present, connected and open—new insights often emerge.`,
+  },
+  {
+    slug: "toward-a-theory-of-team-synchronicity",
+    title: "Toward a Theory of Team Synchronicity",
+    author: "Dr. Philip Merry CSP,CSPGlobal, Speaking Fellow", date: "June 11, 2026", categories: "Team Coaching",
+    cover: "https://www.asiaspeakers.org/wp-content/uploads/2026/06/Philip-Merry-post-1200x803.jpeg",
+    excerpt: "This study provides one of the first structured analyses of how synchronicity manifests within organisational teams.",
+    body: `A Qualitative Study of Behaviours, Facilitation Practices, and Quantum Leadership Qualities. Based on empirical data from the Research Session at the Singapore Facilitator's Network Conference, November 2025.
+
+Philip Merry PhD, CEO TeamSynchronicity, www.philipmerry.com
+
+Abstract
+
+Although synchronicity has been widely discussed in psychology and leadership discourse, limited empirical research has examined what synchronicity looks like within organisational teams. This qualitative study analyses descriptive data from a multi-participant exploration of synchronicity in teams, identifying three major domains: (1) behavioural markers of team synchronicity; (2) facilitation practices that cultivate synchronicity; and (3) the qualities of a "quantum facilitator." Findings suggest that synchronicity manifests not merely as rare, extraordinary events, but as an emergent relational capacity involving intuition, openness, pattern recognition, and collective sensemaking. Implications for quantum leadership and psychological safety are discussed.
+
+Introduction
+
+Synchronicity—defined as meaningful coincidences that provide insight, guidance, or timely support—has traditionally been understood through the lens of individual experience. Emerging scholarship in quantum leadership suggests that synchronicity may also operate at the team level, influencing decision-making, creativity, alignment, and problem-solving (Merry, 2017). Yet empirical descriptions of team-based synchronicity remain sparse.
+
+This research article synthesises qualitative data from a facilitated exploration of synchronicity among organisational practitioners. The purpose is to articulate what synchronicity looks like in teams, what facilitators do to encourage it, and what defines a "quantum facilitator." These findings contribute to an emerging field at the intersection of synchronicity studies, team psychological safety, and quantum leadership.
+
+Methodology
+
+The dataset used for this study consists of qualitative responses collected during a professional learning session on synchronicity in teams at the Singapore Facilitators Network Conference in November 2025. Participants contributed descriptions of behaviours, attitudes, and examples related to synchronicity in their work teams. A grounded-theory thematic analysis was conducted, following the steps of open coding, axial coding, and theme clustering. All themes emerged inductively from the dataset.
+
+Findings
+
+Across responses, synchronicity was described not as random coincidence but as a pattern of collective behaviour. The findings suggest that synchronicity is not mystical or accidental—it is an emergent team capacity shaped by intuition, openness, trust, and skilled facilitation. Further research could investigate the impact of synchronicity on innovation, team cohesion, and decision accuracy.`,
+  },
+  {
+    slug: "not-every-expert-is-a-keynote-speaker",
+    title: "Not every expert is a Keynote Speaker",
+    author: "Dr. Lakshmi Ramachandran", date: "June 7, 2026", categories: "Communication / Voice",
+    cover: "https://www.asiaspeakers.org/wp-content/uploads/2026/06/Difference-between-expert-and-a-keynote-speaker-1200x675-1.png",
+    excerpt: "A packed conference hall. A brilliant expert on stage. A few minutes in, the energy in the room collapses. This is not a knowledge problem — it is a communication one.",
+    body: `What separates the two, and how to close the gap.
+
+The speaker is brilliant. Their credentials are unimpeachable. They know their field better than most others in the room. And yet as they start to speak, the energy in the room goes down and phones come out.
+
+After the talk finishes, people walk away with nothing that will change how they think or what they will do differently.
+
+This is not a knowledge problem. It is a communication problem, which is more common than most experts like to admit.
+
+The difference between speaking as a professional/expert and professional speaking
+
+This is a distinction worth understanding. Anyone with deep knowledge can stand at a podium and share what they know. That is public speaking in its broadest sense: presenting information to a group. This is significantly different from professional keynote speaking.
+
+Let's understand this by pausing on the word "keynote". In music, the keynote sets the tonal foundation for everything that follows. A keynote speaker at an event does the same: they set the tone and the direction for the entire gathering, and they leave the audience in a different, positive place—better informed, inspired and impacted—than when they walked in.
+
+The craft is not in the content alone. It is in how that content is shaped, delivered, and received. Importantly, in how it moves people, not just informs them.
+
+Why brilliant people sometimes lose the room
+
+Experts who struggle on stage are rarely lacking in substance. The gap lies in preparing the talk rather than preparing for the audience—in spending hours on what to say and very little time thinking about who is sitting in that room, what they already believe, what they are hoping for, and what would actually shift something for them.
+
+You lose the audience the moment you treat them as a passive receiver of information rather than an active participant in something worth their full attention.
+
+The single shift that changes everything: from "what do I want to say" to "what does this audience need to receive." That reorientation rewrites the entire preparation process.
+
+Four ways experts can hold the room better
+
+If you are an expert who speaks at conferences, leadership forums, internal events, or client sessions, these are the shifts that make the most consistent difference.
+
+Research the room before you research the topic. Before you finalise a single slide, understand who will be in that room. What do they already know? What are they struggling with? What do they want to walk away with? The best speakers ask these questions before they write a word.
+
+Choose stories before you choose data. Data informs, stories move.
+
+Brilliance without influence is invisible. Closing that gap is one of the most valuable things any expert leader can do.`,
+  },
+  {
+    slug: "how-can-leaders-realise-productivity-gains-in-the-age-of-ai",
+    title: "How Can Leaders Realise Productivity Gains in the Age of AI? Highlights from My AI Speech In Singapore",
+    author: "Mark Stuart CSP", date: "May 6, 2026", categories: "Digital, Leadership, Management, Technology",
+    cover: "https://www.asiaspeakers.org/wp-content/uploads/2026/05/AI-Keynote-Speaker-Singapore-Mark-Stuart-Keynote-Speech-AI-1.png",
+    excerpt: "Discover how AI keynote speaker Mark Stuart helps leaders boost productivity in the AI era, from his keynote delivered at Sentosa Cove, Singapore.",
+    body: `When Mark Stuart, CSP delivered his keynote, "How Leaders Can Realise Productivity Gains in the Age of AI," at W Hotel Sentosa Cove in Singapore for Allianz on 10 April 2026, the audience was a senior and C-suite audience of insurance leaders — people responsible for strategy, performance, risk, transformation, clients, and the future relevance of their organisations.
+
+The real AI question for leaders today is no longer, "What can the technology do?" The more urgent question is, "How do we convert what the technology can do into measurable business value?"
+
+Across Asia and the world, companies are investing heavily in artificial intelligence, generative AI, automation, and increasingly, agentic AI. In insurance, the opportunity is especially significant. AI can improve underwriting, speed up claims, enhance fraud detection, personalise client engagement, and support advisers with faster insight. McKinsey has reported that AI-enabled rewiring in insurance has already produced measurable improvements, including 10 to 20 per cent improvement in new-agent success and sales conversion rates, 10 to 15 per cent premium growth, 20 to 40 per cent reductions in the cost of onboarding new customers, and 3 to 5 per cent improvements in claims accuracy.
+
+Yet the paradox is clear: while AI can create impressive gains at the task level, many organisations are still struggling to translate those gains into enterprise-wide productivity. As highlighted in the Allianz presentation slides, AI can deliver task-level gains of 14 to 55 per cent, yet many companies are still not seeing meaningful productivity improvements across the organisation. This is the leadership challenge of the AI age.
+
+AI Is Not Just an Efficiency Tool
+
+For many organisations, the first instinct is to treat AI as a faster way to do existing work. Draft the report faster. Summarise the meeting faster. Generate the email faster. Analyse the data faster. While these are useful improvements, they are not transformation.
+
+The keynote made a crucial point: productivity gains only become valuable when saved time is reinvested into better outcomes. If a broker saves three hours preparing a client proposal, but the proposal is merely completed earlier rather than made sharper, more personalised, more persuasive, or more commercially valuable, then the organisation has saved time without creating strategic advantage.
+
+This is where many AI initiatives stall. Employees become more efficient, but the company does not become more competitive. Research supports this tension: MIT Sloan reported that generative AI improved the performance of highly skilled workers by nearly 40 per cent in certain professional tasks.`,
+  },
+  {
+    slug: "the-future-of-work-what-does-it-mean-for-you",
+    title: "The Future of Work: What Does It Mean for You?",
+    author: "Mark Stuart CSP", date: "April 2, 2025", categories: "Change Management, Innovation/Creativity, Leadership, Strategy",
+    cover: "https://www.asiaspeakers.org/wp-content/uploads/2025/04/future-of-work-speaker-singapore-mark-stuart.png",
+    excerpt: "The question for all professionals and leaders is no longer whether the future of work is coming, but what it means for you.",
+    body: `"You cannot overtake 15 cars in sunny weather… but you can when it's raining." — Ayrton Senna
+
+As the pace of change accelerates across industries, these words from Formula 1 legend Ayrton Senna ring more true than ever. The rain is here: economic uncertainty, technological disruption, workforce upheaval. But therein lies opportunity—for those bold enough to seize it.
+
+In this article, we explore what's driving change this year and beyond, and how you can navigate it using the three-part Future of Work Framework: Data, Technology, and People.
+
+The Macro Forces Reshaping Our Work
+
+From logistics to financial services, healthcare to manufacturing, three macro trends are impacting every sector: industry consolidation through technology, geopolitical risk and supply chain disruption, and workforce transformation.
+
+Digital transformation has become a survival imperative. Companies that lag in tech adoption are being absorbed—or simply left behind. The war in Ukraine, ongoing tensions in the South China Sea, and regional trade disputes have reshaped global supply chains; McKinsey reports that 90% of global supply chain leaders plan to shift or have already shifted sourcing strategies in response to geopolitical instability.
+
+The nature of work itself is changing. Hybrid work, AI collaboration, and skills shortages are pushing leaders to rethink everything from hiring to learning and development. According to PwC's 2024 Global Workforce Hopes and Fears Survey, 53% of employees believe their job will change significantly within the next five years, and 39% are worried they're not getting the training needed to thrive.
+
+Introducing the Future of Work Framework: Data | Technology | People
+
+DATA: The New Language of Work. Data is now one of the most valuable assets in any business—but having it isn't enough. Only 24% of decision-makers say they can access the data they need to make informed decisions (Harvard Business Review), and just 13% of organisations are considered "data mature" (Accenture).
+
+Each element of the framework—Data, Technology, and People—represents a pillar of career resilience and leadership readiness for the years ahead.`,
+  },
+  {
+    slug: "leading-at-the-speed-of-change",
+    title: "Leading at the Speed of Change: My Leadership In A Digital Framework",
+    author: "Mark Stuart CSP", date: "March 29, 2025", categories: "Change Management, Innovation/Creativity, Leadership, Management",
+    cover: "https://www.asiaspeakers.org/wp-content/uploads/2025/03/leadership-speaker-singapore.png",
+    excerpt: "Leaders today are not only expected to manage teams but also navigate an increasingly digital and fast-changing landscape.",
+    body: `The rapid evolution of technology is redefining the world of work. Leaders today are not only expected to manage teams but also navigate an increasingly digital and fast-changing landscape. Whether leading a multinational corporation or a small enterprise, staying ahead requires a new mindset and a fresh set of skills.
+
+Through work with over 700 companies in 22 countries, the Leadership in a Digital Age (LIDA) Framework was developed to help leaders adapt and thrive in this era of transformation.
+
+Learning: Staying Ahead in an Era of Continuous Change
+
+The only constant in today's world is change. A 2023 report by the World Economic Forum estimates that 44% of workers' skills will be disrupted by 2027, with nearly one billion people needing to reskill to remain relevant in their industries. Learning is no longer a one-time event but an ongoing process.
+
+To be future-ready, leaders must commit to lifelong learning, encourage a culture of learning within their organisations, and embrace unlearning and relearning. According to a LinkedIn Workplace Learning Report, 94% of employees would stay at a company longer if it invested in their learning and development.
+
+Innovation: Building a Culture of Creativity and Continuous Improvement
+
+Innovation is no longer optional; it is a necessity for survival. Research from McKinsey shows that companies with a strong innovation strategy grow 2.4 times faster than their peers. However, innovation is not just about creating new products—it is about rethinking processes, improving customer experience, and fostering a culture that encourages new ideas.
+
+To lead innovation, leaders should empower teams to think creatively, encourage risk-taking and reward bold ideas, and enhance customer and user experience. Research from PwC indicates that 73% of consumers say a good experience is a key factor in their purchasing decisions.`,
+  },
+];
+
+async function upsertBlogCollection() {
+  const payload = {
+    site_id: site.id, tenant_id: tenant.id, name: "Blog", slug: "blog",
+    description: "Articles from APSS members.",
+    fields: [
+      { key: "cover", label: "Cover image", type: "image", required: false },
+      { key: "categories", label: "Category", type: "text", required: false },
+      { key: "meta", label: "Byline (author · date)", type: "text", required: false },
+      { key: "excerpt", label: "Excerpt", type: "text", required: false },
+      { key: "body", label: "Body", type: "textarea", required: true },
+    ],
+    updated_at: new Date().toISOString(),
+  };
+  const { data: existing } = await supabase.from("website_collections").select("id").eq("site_id", site.id).eq("slug", "blog").maybeSingle();
+  if (existing) { await supabase.from("website_collections").update(payload).eq("id", existing.id); return existing.id; }
+  const { data, error } = await supabase.from("website_collections").insert(payload).select("id").single();
+  if (error) throw error;
+  return data.id;
+}
+
+async function upsertBlogPost(collectionId, post) {
+  const payload = {
+    collection_id: collectionId, tenant_id: tenant.id, slug: post.slug, title: post.title, status: "published",
+    data: { cover: post.cover, categories: post.categories, meta: `By ${post.author} · ${post.date}`, excerpt: post.excerpt, body: post.body },
+    published_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+  };
+  const { data: existing } = await supabase.from("website_collection_entries").select("id").eq("collection_id", collectionId).eq("slug", post.slug).maybeSingle();
+  if (existing) return supabase.from("website_collection_entries").update(payload).eq("id", existing.id);
+  return supabase.from("website_collection_entries").insert({ ...payload, created_by: userId });
+}
+
 // --- Site + pages -----------------------------------------------------------------------
 
 const SITE_SLUG = "apss";
@@ -469,10 +754,10 @@ async function upsertSite() {
   return data.id;
 }
 
-async function upsertPage({ name, path, kind, document, title, description }) {
+async function upsertPage({ name, path, kind, document, title, description, collectionId = null }) {
   const base = {
     site_id: site.id, tenant_id: tenant.id, name, path, kind, title, description,
-    document, status: "published", created_by: userId, updated_at: new Date().toISOString(),
+    collection_id: collectionId, document, status: "published", created_by: userId, updated_at: new Date().toISOString(),
   };
   const { data: existing } = await supabase.from("website_pages").select("id").eq("site_id", site.id).eq("path", path).maybeSingle();
   let pageId = existing?.id;
@@ -503,8 +788,10 @@ async function upsertDirectoryMount() {
 
 const siteId = await upsertSite();
 const site = { id: siteId };
-const collectionId = await upsertCollection();
+const collectionId = await upsertSpeakersCollection();
 for (const speaker of SPEAKERS) await upsertSpeaker(collectionId, speaker);
+const blogCollectionId = await upsertBlogCollection();
+for (const post of BLOG_POSTS) await upsertBlogPost(blogCollectionId, post);
 
 const homeId = await upsertPage({
   name: "Home", path: "/", kind: "landing", title: "APSS",
@@ -522,6 +809,16 @@ await upsertPage({
   document: buildDocument(speakersTree(collectionId)),
 });
 await upsertPage({
+  name: "Blog", path: "/blog", kind: "page", title: "The APSS blog",
+  description: "Read exclusive content from our members here on the blog.",
+  document: buildDocument(blogTree(blogCollectionId)),
+});
+await upsertPage({
+  name: "Blog post", path: "/blog/:slug", kind: "collection_template", title: "APSS blog",
+  description: "An article from the APSS blog.", collectionId: blogCollectionId,
+  document: buildDocument(blogPostTree()),
+});
+await upsertPage({
   name: "Join", path: "/join", kind: "funnel", title: "Join APSS",
   description: "Membership tiers and how to join Asia Professional Speakers Singapore.",
   document: buildDocument(joinTree()),
@@ -536,7 +833,7 @@ await upsertDirectoryMount();
 
 const origin = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "http://localhost:3001";
 console.log(JSON.stringify({
-  site: "APSS", speakers: SPEAKERS.length,
-  pages: ["/", "/about", "/speakers", "/join", "/contact"],
-  publicUrls: [`${origin}/${SITE_SLUG}`, `${origin}/${SITE_SLUG}/about`, `${origin}/${SITE_SLUG}/speakers`],
+  site: "APSS", speakers: SPEAKERS.length, blogPosts: BLOG_POSTS.length,
+  pages: ["/", "/about", "/speakers", "/blog", "/blog/:slug", "/join", "/contact"],
+  publicUrls: [`${origin}/${SITE_SLUG}`, `${origin}/${SITE_SLUG}/speakers`, `${origin}/${SITE_SLUG}/blog`, `${origin}/${SITE_SLUG}/blog/${BLOG_POSTS[0].slug}`],
 }, null, 2));

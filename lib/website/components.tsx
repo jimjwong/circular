@@ -259,14 +259,17 @@ export const WEBSITE_COMPONENTS: Record<string, ComponentMeta> = {
   CollectionField: {
     label: "Collection field", category: "Commune", icon: Baseline, acceptsChildren: false,
     defaultProps: { field: "title" },
-    // "Render as image" is a per-placement choice rather than inferred from the
-    // collection's declared field type, so one field (e.g. a photo URL) can be shown as
-    // text in one layout and as an image in another without changing the collection.
+    // "Render as image" and "Link to" are per-placement choices rather than inferred
+    // from the collection's declared field type: a photo URL field can be shown as text
+    // in one layout and an image in another, and the same field can link to that entry's
+    // own page in a listing without needing a page-per-entry template.
     fields: [
       { key: "field", label: "Field key", type: "text", placeholder: "title" },
       { key: "asImage", label: "Render as image", type: "boolean" },
+      { key: "hrefTemplate", label: "Link to (use :slug for the entry)", type: "text", placeholder: "/blog/:slug" },
     ],
-    // The renderer (which has the entry data) fills this in; asImage decides img vs span there.
+    // The renderer (which has the entry data) fills this in; asImage/hrefTemplate decide
+    // img vs span vs anchor there.
     render: ({ className }) => <span className={className} />,
   },
   PricingTable: {
