@@ -13,31 +13,45 @@ export const metadata: Metadata = {
 
 // Some mobile browsers (in-app AI/proxy renderers in particular) inject their own
 // tracking attributes — seen so far as __gcrremoteframetoken on <html> and __gcruniqueid
-// on every <form> and <input> — before React hydrates. The server-rendered HTML never
-// has them, so every page with a form surfaces a hydration-mismatch error, one page at a
-// time, as each is first hit. Rather than sprinkle suppressHydrationWarning across every
-// form in the app, this strips any such attribute the instant it appears, so hydration
-// never sees a mismatch in the first place. beforeInteractive runs this before Next's own
-// hydration, and the MutationObserver keeps catching attributes added afterward.
+// on every <form>, <input>, and <select> — before React hydrates. The server-rendered
+// HTML never has them, so every page with a form surfaces a hydration-mismatch error,
+// one page at a time, as each is first hit.
+//
+// The injection turned out to land on every descendant of <body> at once — likely the
+// browser rewriting the response body itself before the page is parsed, rather than a
+// content script mutating the live DOM afterward — so a first pass that only checked
+// document.documentElement's own attributes missed every form field entirely. This
+// sweeps every element already in the document, then keeps a MutationObserver running
+// in case any browser instead adds these attributes as a later, live mutation.
+// beforeInteractive guarantees this runs before Next's own hydration.
 const STRIP_INJECTED_ATTRIBUTES_SCRIPT = `
 (function () {
   var PREFIX = "__gcr";
-  function strip(el) {
+  function stripOwn(el) {
     for (var i = el.attributes.length - 1; i >= 0; i--) {
       var name = el.attributes[i].name;
       if (name.indexOf(PREFIX) === 0) el.removeAttribute(name);
     }
   }
-  strip(document.documentElement);
+  function stripTree(root) {
+    stripOwn(root);
+    var all = root.getElementsByTagName("*");
+    for (var i = 0; i < all.length; i++) stripOwn(all[i]);
+  }
+  stripTree(document.documentElement);
   if (typeof MutationObserver === "undefined") return;
   new MutationObserver(function (mutations) {
     for (var i = 0; i < mutations.length; i++) {
       var m = mutations[i];
       if (m.type === "attributes" && m.attributeName && m.attributeName.indexOf(PREFIX) === 0) {
         m.target.removeAttribute(m.attributeName);
+      } else if (m.type === "childList") {
+        for (var j = 0; j < m.addedNodes.length; j++) {
+          if (m.addedNodes[j].nodeType === 1) stripTree(m.addedNodes[j]);
+        }
       }
     }
-  }).observe(document.documentElement, { attributes: true, subtree: true });
+  }).observe(document.documentElement, { attributes: true, subtree: true, childList: true });
 })();
 `;
 
