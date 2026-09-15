@@ -29,7 +29,9 @@ export function AuthForm({ mode, next = "/", initialEmail = "", initialPassword 
   const isForgot = mode === "forgot";
 
   return (
-    <form action={action} className="mt-7 space-y-4">
+    // See app/layout.tsx: some mobile browsers inject their own attributes (e.g.
+    // __gcruniqueid) onto this form before hydration; suppressed for the same reason.
+    <form action={action} className="mt-7 space-y-4" suppressHydrationWarning>
       <input type="hidden" name="next" value={next} />
       {isLogin && <div className="rounded-2xl border border-[#dce5df] bg-[#f7faf8] p-3"><p className="text-[10px] font-bold uppercase tracking-[.12em] text-[#517061]">Local demo accounts</p><div className="mt-2 grid grid-cols-2 gap-2">{demoAccounts.map(([, label, accountEmail])=><button type="button" onClick={() => { setLoginEmail(accountEmail); setLoginPassword("Demo123!"); }} key={accountEmail} className={`rounded-lg border px-2 py-2 text-left text-[10px] font-semibold transition ${loginEmail===accountEmail?"border-[#4d8a6d] bg-[#e6f2eb] text-[#225f45]":"border-[#e0e7e2] bg-white text-[#607168] hover:border-[#a9c8b8]"}`}>{label}</button>)}</div><p className="mt-2 text-[9px] text-[#809087]">Select a role to fill its local credentials.</p></div>}
       {isSignup && <Field label="Full name" name="name" placeholder="Jamie Chen" error={state?.errors?.name?.[0]} />}
@@ -59,5 +61,7 @@ export function AuthForm({ mode, next = "/", initialEmail = "", initialPassword 
 }
 
 function Field({ label, name, type = "text", placeholder, error, value, onChange }: { label: string; name: string; type?: string; placeholder: string; error?: string; value?: string; onChange?: (value: string) => void }) {
-  return <label className="block"><span className="mb-2 block text-xs font-semibold text-[#41564a]">{label}</span><input required name={name} type={type} placeholder={placeholder} value={value} onChange={onChange ? (event) => onChange(event.target.value) : undefined} aria-invalid={Boolean(error)} className="h-11 w-full rounded-xl border border-[#dbe3de] bg-white px-3 text-sm outline-none transition placeholder:text-[#a5aea9] focus:border-[#72a88f] focus:ring-2 focus:ring-[#dceee5] aria-[invalid=true]:border-[#d98b76]"/>{error&&<span className="mt-1.5 block text-[11px] text-[#af553f]">{error}</span>}</label>;
+  // See app/layout.tsx: some mobile browsers inject a __gcruniqueid attribute onto every
+  // input before hydration; suppressed for the same reason.
+  return <label className="block"><span className="mb-2 block text-xs font-semibold text-[#41564a]">{label}</span><input required name={name} type={type} placeholder={placeholder} value={value} onChange={onChange ? (event) => onChange(event.target.value) : undefined} aria-invalid={Boolean(error)} suppressHydrationWarning className="h-11 w-full rounded-xl border border-[#dbe3de] bg-white px-3 text-sm outline-none transition placeholder:text-[#a5aea9] focus:border-[#72a88f] focus:ring-2 focus:ring-[#dceee5] aria-[invalid=true]:border-[#d98b76]"/>{error&&<span className="mt-1.5 block text-[11px] text-[#af553f]">{error}</span>}</label>;
 }

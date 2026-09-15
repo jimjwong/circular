@@ -12,7 +12,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    // Some mobile browsers (in-app AI/proxy renderers in particular) inject their own
+    // attributes onto <html> before React hydrates, e.g. __gcrremoteframetoken. That is
+    // outside our control and harmless, so it is suppressed rather than left to surface
+    // as a full-screen dev-mode hydration error.
+    <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${manrope.variable}`}>{children}</body>
     </html>
   );
