@@ -3,17 +3,25 @@ import { notFound } from "next/navigation";
 import CommunityPage from "@/app/(app)/community/page";
 import { ThemeShell } from "@/components/themes/theme-shell";
 import { PublicSite } from "@/components/website/public-site";
-import { getActiveOrganization } from "@/lib/auth/dal";
+import { getActiveOrganization, getOptionalActiveOrganization } from "@/lib/auth/dal";
 import { createClient } from "@/lib/supabase/server";
 import { loadPublicPage, loadRenderData, resolveSiteByDirectory } from "@/lib/website/queries";
 import { siteMetaTitle } from "@/lib/website/preview";
 
 type Params = { mount: string; rest?: string[] };
 
-// A first path segment can mean two things, so both live in one route: a site mounted on
-// a directory (public), or the vanity alias for the active community (authenticated).
-// A directory mount wins, because mounts are explicit records and community aliases are not.
+// A first path segment can mean two things: a site mounted on a directory (public), or
+// the vanity alias for a signed-in member's own community (authenticated) — and a
+// tenant's slug can coincidentally equal its own site's mount (the demo tenant and its
+// public site are both "apss"). The alias only ever matches a bare mount with no
+// sub-path, so it's checked first only then — a signed-in member always reaches their
+// own community at that path even when a public site happens to share its address;
+// anyone else (anonymous, or signed in but this isn't their org) sees the site.
 async function resolveMountedSite({ mount, rest }: Params) {
+  if (!rest?.length) {
+    const organization = await getOptionalActiveOrganization();
+    if (organization?.slug === mount) return null;
+  }
   const resolved = await resolveSiteByDirectory(mount);
   if (!resolved) return null;
   const path = `/${(rest ?? []).join("/")}`;

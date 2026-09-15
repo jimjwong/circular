@@ -8,12 +8,18 @@ import type { CurrentUser, OrganizationSummary, PlatformRole, TenantRole } from 
 
 const ACTIVE_TENANT_COOKIE = "commune-active-tenant";
 
-export const verifyUser = cache(async (): Promise<CurrentUser> => {
+/**
+ * The claims check behind verifyUser, without the redirect — for routes that must serve
+ * anonymous visitors (a public site mount) and only special-case a signed-in viewer.
+ * Calling verifyUser() itself there would redirect every anonymous visitor to /login
+ * before the route ever got to decide whether this was actually a public page.
+ */
+export const getOptionalUser = cache(async (): Promise<CurrentUser | null> => {
   const supabase = await createClient();
   const { data: claimsData, error } = await supabase.auth.getClaims();
   const claims = claimsData?.claims;
 
-  if (error || !claims?.sub) redirect("/login");
+  if (error || !claims?.sub) return null;
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -30,6 +36,12 @@ export const verifyUser = cache(async (): Promise<CurrentUser> => {
     .join("");
 
   return { id: claims.sub, email, displayName, initials };
+});
+
+export const verifyUser = cache(async (): Promise<CurrentUser> => {
+  const user = await getOptionalUser();
+  if (!user) redirect("/login");
+  return user;
 });
 
 export const getOrganizations = cache(async (): Promise<OrganizationSummary[]> => {
@@ -59,6 +71,38 @@ export const getOrganizations = cache(async (): Promise<OrganizationSummary[]> =
 
 export async function getActiveOrganization() {
   const organizations = await getOrganizations();
+  if (!organizations.length) return null;
+
+  const cookieStore = await cookies();
+  const requestedId = cookieStore.get(ACTIVE_TENANT_COOKIE)?.value;
+  return organizations.find((organization) => organization.id === requestedId) ?? organizations[0];
+}
+
+/**
+ * getActiveOrganization for a route that must not force anonymous visitors through
+ * /login — returns null instead. A tenant slug can collide with a public website's own
+ * directory mount (both are the first path segment); a signed-in member's own
+ * organization takes precedence over that coincidence, an anonymous visitor's doesn't.
+ */
+export async function getOptionalActiveOrganization() {
+  const user = await getOptionalUser();
+  if (!user) return null;
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("tenant_memberships")
+    .select("role, status, tenants!tenant_memberships_tenant_id_fkey!inner(id, name, slug, description, status, plan)")
+    .eq("user_id", user.id)
+    .eq("status", "active");
+  if (error) throw new Error(`Unable to load organizations: ${error.message}`);
+
+  const organizations: OrganizationSummary[] = (data ?? []).map((row) => {
+    const tenant = Array.isArray(row.tenants) ? row.tenants[0] : row.tenants;
+    return {
+      id: tenant.id, name: tenant.name, slug: tenant.slug, description: tenant.description,
+      role: row.role as TenantRole, status: tenant.status, plan: tenant.plan,
+    };
+  });
   if (!organizations.length) return null;
 
   const cookieStore = await cookies();
