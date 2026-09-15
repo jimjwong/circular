@@ -9,9 +9,9 @@ if (!url || !publishableKey || !secret) throw new Error("Supabase environment va
 const admin = createClient(url, secret, { auth: { persistSession: false, autoRefreshToken: false } });
 const owner = createClient(url, publishableKey, { auth: { persistSession: false, autoRefreshToken: false } });
 
-const ownerEmail = "owner@circular.local";
-const ownerPassword = "Circular123!";
-const memberEmail = "phase-one-member@circular.local";
+const ownerEmail = "owner@commune.local";
+const ownerPassword = "Commune123!";
+const memberEmail = "phase-one-member@commune.local";
 const memberPassword = "PhaseOne123!";
 
 const { error: ownerSignInError } = await owner.auth.signInWithPassword({ email: ownerEmail, password: ownerPassword });

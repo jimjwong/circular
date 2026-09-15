@@ -1,4 +1,4 @@
-# Circular product map
+# Commune product map
 
 This scope combines the supplied 39-page Circle admin-console capture with Circle's public product and help documentation reviewed on 2 September 2026.
 

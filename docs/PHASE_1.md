@@ -40,8 +40,8 @@ Supabase Studio runs at `http://127.0.0.1:54523`. The local application is confi
 
 ## Local platform owner
 
-- Email: `owner@circular.local`
-- Password: `Circular123!`
+- Email: `owner@commune.local`
+- Password: `Commune123!`
 
 These credentials are local development fixtures only and must never be used in a deployed environment.
 

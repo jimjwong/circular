@@ -8,7 +8,7 @@ alter table public.tenants
     check (jsonb_typeof(theme_config) = 'object');
 
 comment on column public.tenants.theme_preset is
-  'Named Circular theme preset, or custom when tenant-selected values are used.';
+  'Named Commune theme preset, or custom when tenant-selected values are used.';
 
 comment on column public.tenants.theme_config is
   'Validated color and typography overrides for the tenant theme.';

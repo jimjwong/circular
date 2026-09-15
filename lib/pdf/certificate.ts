@@ -47,7 +47,7 @@ export function createCertificatePdf(input: CertificatePdfInput) {
     "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>",
     `<< /Length ${Buffer.byteLength(commands)} >>\nstream\n${commands}\nendstream`,
   ];
-  let pdf = "%PDF-1.4\n%Circular\n";
+  let pdf = "%PDF-1.4\n%Commune\n";
   const offsets = [0];
   objects.forEach((object, index) => { offsets.push(Buffer.byteLength(pdf)); pdf += `${index + 1} 0 obj\n${object}\nendobj\n`; });
   const xref = Buffer.byteLength(pdf);

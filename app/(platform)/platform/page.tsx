@@ -83,7 +83,7 @@ export default async function PlatformPage() {
       <header className="border-b border-[#dfe7e2] bg-white/90 px-5 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-[1480px] items-center gap-3">
           <span className="grid size-9 place-items-center rounded-xl bg-[#173f31] font-display font-bold text-white">C</span>
-          <div><b className="font-display block text-sm">Circular Platform</b><span className="block text-[10px] uppercase tracking-[.14em] text-[#7d8b83]">Owner console</span></div>
+          <div><b className="font-display block text-sm">Commune Platform</b><span className="block text-[10px] uppercase tracking-[.14em] text-[#7d8b83]">Owner console</span></div>
           <div className="ml-auto flex items-center gap-3">
             <span className="hidden text-right sm:block"><b className="block text-xs">{user.displayName}</b><small className="capitalize text-[#7d8b83]">{label(platformRole)}</small></span>
             <form action={signOut}><button className="rounded-xl border border-[#dce5df] bg-white px-3 py-2 text-xs font-semibold hover:bg-[#f5f8f6]">Sign out</button></form>
@@ -110,7 +110,7 @@ export default async function PlatformPage() {
         </section>
 
         <section>
-          <div className="mb-4 flex items-end justify-between"><div><h2 className="font-display text-lg font-bold">Plan catalog</h2><p className="mt-1 text-xs text-[#7a8880]">Circular entitlements remain authoritative; a billing provider can synchronize into this model later.</p></div><span className="text-xs font-semibold text-[#6f7f76]">{attentionOrganizations} need attention</span></div>
+          <div className="mb-4 flex items-end justify-between"><div><h2 className="font-display text-lg font-bold">Plan catalog</h2><p className="mt-1 text-xs text-[#7a8880]">Commune entitlements remain authoritative; a billing provider can synchronize into this model later.</p></div><span className="text-xs font-semibold text-[#6f7f76]">{attentionOrganizations} need attention</span></div>
           <div className="grid gap-4 lg:grid-cols-3">{planCatalog.map((plan) => {
             const planEntitlements = entitlementByPlan.get(plan.id);
             const memberLimit = Number(planEntitlements?.get("members.max") ?? 0);

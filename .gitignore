@@ -1,9 +1,13 @@
 node_modules
 .next
 .env.local
+.env.listmonk
 *.log
 .DS_Store
 tmp/
 circle_screenshots.txt
 supabase/.branches/
 supabase/.temp/
+infra/listmonk/uploads/*
+!infra/listmonk/uploads/.gitkeep
+tsconfig.tsbuildinfo

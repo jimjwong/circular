@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope" });
 
 export const metadata: Metadata = {
-  title: "Circular — Community OS",
+  title: "Commune — Community OS",
   description: "The operating system for modern membership communities.",
 };
 

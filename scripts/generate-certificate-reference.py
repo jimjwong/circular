@@ -7,7 +7,7 @@ from reportlab.lib.pagesizes import A4, landscape
 from reportlab.pdfbase.pdfmetrics import stringWidth
 from reportlab.pdfgen import canvas
 
-OUTPUT = Path(__file__).resolve().parents[1] / "output" / "pdf" / "circular-certificate-reference.pdf"
+OUTPUT = Path(__file__).resolve().parents[1] / "output" / "pdf" / "commune-certificate-reference.pdf"
 OUTPUT.parent.mkdir(parents=True, exist_ok=True)
 width, height = landscape(A4)
 c = canvas.Canvas(str(OUTPUT), pagesize=(width, height))
@@ -47,7 +47,7 @@ c.drawCentredString(width / 2, height - 276, "Professional Community Leadership"
 c.setFont("Helvetica-Bold", 12)
 c.drawCentredString(width / 2, height - 309, "6.0 verified CPD hours")
 
-verification_url = "http://localhost:3001/verify/00000000-0000-4000-8000-000000000001"
+verification_url = "https://commune.example/verify/00000000-0000-4000-8000-000000000001"
 widget = qr.QrCodeWidget(verification_url)
 bounds = widget.getBounds()
 size = 74

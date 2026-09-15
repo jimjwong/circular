@@ -1,0 +1,59 @@
+name: circular-email
+
+services:
+  app:
+    image: listmonk/listmonk:v6.2.0
+    container_name: circular_listmonk
+    restart: unless-stopped
+    ports:
+      - "9001:9000"
+    networks:
+      - listmonk
+      - circular-supabase
+    depends_on:
+      db:
+        condition: service_healthy
+    command: [sh, -c, "./listmonk --install --idempotent --yes --config '' && ./listmonk --upgrade --yes --config '' && ./listmonk --config ''"]
+    environment:
+      LISTMONK_app__address: 0.0.0.0:9000
+      LISTMONK_db__user: listmonk
+      LISTMONK_db__password: listmonk-local
+      LISTMONK_db__database: listmonk
+      LISTMONK_db__host: db
+      LISTMONK_db__port: 5432
+      LISTMONK_db__ssl_mode: disable
+      LISTMONK_db__max_open: 25
+      LISTMONK_db__max_idle: 25
+      LISTMONK_db__max_lifetime: 300s
+      LISTMONK_ADMIN_USER: ${LISTMONK_ADMIN_USER:?Set LISTMONK_ADMIN_USER in .env.listmonk}
+      LISTMONK_ADMIN_PASSWORD: ${LISTMONK_ADMIN_PASSWORD:?Set LISTMONK_ADMIN_PASSWORD in .env.listmonk}
+      TZ: Asia/Singapore
+    volumes:
+      - ./uploads:/listmonk/uploads:rw
+
+  db:
+    image: postgres:17-alpine
+    container_name: circular_listmonk_db
+    restart: unless-stopped
+    networks:
+      - listmonk
+    environment:
+      POSTGRES_USER: listmonk
+      POSTGRES_PASSWORD: listmonk-local
+      POSTGRES_DB: listmonk
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U listmonk"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - listmonk-data:/var/lib/postgresql/data
+
+networks:
+  listmonk:
+  circular-supabase:
+    external: true
+    name: supabase_network_circular
+
+volumes:
+  listmonk-data:

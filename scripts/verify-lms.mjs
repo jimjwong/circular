@@ -12,8 +12,8 @@ const member = makeClient();
 const anonymous = makeClient();
 const admin = createClient(url, secret, { auth: { persistSession: false, autoRefreshToken: false } });
 const [{ error: ownerAuthError }, { error: memberAuthError }] = await Promise.all([
-  owner.auth.signInWithPassword({ email: "owner@circular.local", password: "Circular123!" }),
-  member.auth.signInWithPassword({ email: "phase-one-member@circular.local", password: "PhaseOne123!" }),
+  owner.auth.signInWithPassword({ email: "owner@commune.local", password: "Commune123!" }),
+  member.auth.signInWithPassword({ email: "phase-one-member@commune.local", password: "PhaseOne123!" }),
 ]);
 if (ownerAuthError) throw ownerAuthError;
 if (memberAuthError) throw memberAuthError;

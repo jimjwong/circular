@@ -2,14 +2,14 @@ import { AuthForm } from "@/components/auth/auth-form";
 import { AuthShell } from "@/components/auth/auth-shell";
 
 const demoEmails = {
-  owner: "owner@circular.demo",
-  admin: "admin@circular.demo",
-  moderator: "moderator@circular.demo",
-  member: "member@circular.demo",
-  student: "student@circular.demo",
-  corporate: "corporate@circular.demo",
-  guest: "guest@circular.demo",
-  superadmin: "superadmin@circular.demo",
+  owner: "owner@commune.demo",
+  admin: "admin@commune.demo",
+  moderator: "moderator@commune.demo",
+  member: "member@commune.demo",
+  student: "student@commune.demo",
+  corporate: "corporate@commune.demo",
+  guest: "guest@commune.demo",
+  superadmin: "superadmin@commune.demo",
 } as const;
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; demo?: string }> }) {

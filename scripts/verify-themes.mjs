@@ -6,7 +6,7 @@ if (!url || !key) throw new Error("Supabase environment variables are required."
 
 const connect = async (role) => {
   const client = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
-  const { error } = await client.auth.signInWithPassword({ email: `${role}@circular.demo`, password: "Demo123!" });
+  const { error } = await client.auth.signInWithPassword({ email: `${role}@commune.demo`, password: "Demo123!" });
   if (error) throw error;
   return client;
 };

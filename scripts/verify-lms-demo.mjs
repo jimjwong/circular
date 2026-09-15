@@ -7,7 +7,7 @@ if (!url || !key) throw new Error("Supabase environment variables are required."
 const client = () => createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 const sessions = { owner: client(), admin: client(), moderator: client(), member: client(), student: client() };
 await Promise.all(Object.entries(sessions).map(async ([role, session]) => {
-  const { error } = await session.auth.signInWithPassword({ email: `${role}@circular.demo`, password: "Demo123!" });
+  const { error } = await session.auth.signInWithPassword({ email: `${role}@commune.demo`, password: "Demo123!" });
   if (error) throw error;
 }));
 const { data: tenant, error: tenantError } = await sessions.owner.from("tenants").select("id").eq("slug", "creator-collective-demo").single();

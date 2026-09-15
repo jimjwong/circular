@@ -9,8 +9,8 @@ const supabase = createClient(url, secret, {
   auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
 });
 
-const email = "owner@circular.local";
-const password = "Circular123!";
+const email = "owner@commune.local";
+const password = "Commune123!";
 const { data: listed, error: listError } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
 if (listError) throw listError;
 
@@ -20,7 +20,7 @@ if (!user) {
     email,
     password,
     email_confirm: true,
-    user_metadata: { full_name: "Circular Platform Owner" },
+    user_metadata: { full_name: "Commune Platform Owner" },
   });
   if (error) throw error;
   user = data.user;

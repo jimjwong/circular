@@ -9,14 +9,14 @@ if (!url || !secret) throw new Error("Supabase local environment variables are r
 const supabase = createClient(url, secret, { auth: { autoRefreshToken: false, persistSession: false } });
 const password = "Demo123!";
 const accountSpecs = [
-  { key: "platform", email: "superadmin@circular.demo", name: "Sam Platform", role: null, headline: "Circular platform owner", score: 100 },
-  { key: "owner", email: "owner@circular.demo", name: "Olivia Owner", role: "owner", tier: "professional", headline: "Community founder", score: 94 },
-  { key: "admin", email: "admin@circular.demo", name: "Aiden Admin", role: "admin", tier: "professional", headline: "Community operations", score: 88 },
-  { key: "moderator", email: "moderator@circular.demo", name: "Maya Moderator", role: "moderator", tier: "professional", headline: "Community guide", score: 82 },
-  { key: "member", email: "member@circular.demo", name: "Morgan Member", role: "member", tier: "associate", headline: "Independent creator", score: 68 },
-  { key: "student", email: "student@circular.demo", name: "Taylor Student", role: "member", tier: "professional", headline: "Creator OS student", score: 53 },
-  { key: "corporate", email: "corporate@circular.demo", name: "Casey Corporate", role: "member", tier: "corporate", headline: "Corporate learning partner", score: 61 },
-  { key: "guest", email: "guest@circular.demo", name: "Gabi Guest", role: "member", tier: "guest", headline: "Open House visitor", score: 12 },
+  { key: "platform", email: "superadmin@commune.demo", name: "Sam Platform", role: null, headline: "Commune platform owner", score: 100 },
+  { key: "owner", email: "owner@commune.demo", name: "Olivia Owner", role: "owner", tier: "professional", headline: "Community founder", score: 94 },
+  { key: "admin", email: "admin@commune.demo", name: "Aiden Admin", role: "admin", tier: "professional", headline: "Community operations", score: 88 },
+  { key: "moderator", email: "moderator@commune.demo", name: "Maya Moderator", role: "moderator", tier: "professional", headline: "Community guide", score: 82 },
+  { key: "member", email: "member@commune.demo", name: "Morgan Member", role: "member", tier: "associate", headline: "Independent creator", score: 68 },
+  { key: "student", email: "student@commune.demo", name: "Taylor Student", role: "member", tier: "professional", headline: "Creator OS student", score: 53 },
+  { key: "corporate", email: "corporate@commune.demo", name: "Casey Corporate", role: "member", tier: "corporate", headline: "Corporate learning partner", score: 61 },
+  { key: "guest", email: "guest@commune.demo", name: "Gabi Guest", role: "member", tier: "guest", headline: "Open House visitor", score: 12 },
 ];
 
 const { data: listed, error: listError } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
@@ -54,6 +54,60 @@ if (!tenant) {
 
 for (const spec of accountSpecs.filter(spec=>spec.role)) {
   const { error } = await supabase.from("tenant_memberships").upsert({ tenant_id: tenant.id, user_id: accounts[spec.key].id, role: spec.role, membership_tier: spec.tier, headline: spec.headline, activity_score: spec.score, status: "active", invited_by: spec.key === "owner" ? null : accounts.owner.id, updated_at: new Date().toISOString() });
+  if (error) throw error;
+}
+
+const memberProfileSpecs = {
+  owner: { pronouns: "she/her", headline: "Association leader and professional speaker", bio: "I bring professional speakers together to learn, collaborate, and grow the speaking industry across Asia.", location: "Singapore", interests: ["association leadership", "keynote speaking", "community building"], website_url: "https://www.asiaspeakers.org/", linkedin_url: "https://www.linkedin.com/", availability: "Available for association partnerships", topics: "Leadership, collaboration, and the future of speaking", years: 18, available: true, showEmail: true },
+  admin: { pronouns: "he/him", headline: "Community operations and events lead", bio: "I design member experiences, run professional events, and help our speakers find valuable ways to contribute.", location: "Singapore", interests: ["events", "community operations", "member experience"], website_url: "https://www.asiaspeakers.org/", linkedin_url: "https://www.linkedin.com/", availability: "Open to event partnerships", topics: "Community operations and member engagement", years: 9, available: true, showEmail: true },
+  moderator: { pronouns: "she/her", headline: "Facilitator and community guide", bio: "I facilitate thoughtful conversations and create safe spaces where members can generously exchange experience.", location: "Singapore", interests: ["facilitation", "moderation", "leadership"], website_url: "", linkedin_url: "https://www.linkedin.com/", availability: "Available for facilitation", topics: "Inclusive facilitation and courageous conversations", years: 7, available: true, showEmail: false },
+  member: { pronouns: "they/them", headline: "Emerging speaker and independent creator", bio: "I am developing my first professional talk while building a small learning business for independent designers.", location: "Singapore", interests: ["storytelling", "creator business", "design"], website_url: "https://example.com/", linkedin_url: "", availability: "Looking for a speaking mentor", topics: "Creative confidence and sustainable independent work", years: 2, available: true, showEmail: false },
+  student: { pronouns: "she/her", headline: "Creator OS student and workshop designer", bio: "I turn useful knowledge into welcoming workshops and am here to learn from experienced professional speakers.", location: "Kuala Lumpur, Malaysia", interests: ["course design", "workshops", "learning experience"], website_url: "", linkedin_url: "https://www.linkedin.com/", availability: "Available for workshop collaborations", topics: "Learning design and practical workshops", years: 4, available: true, showEmail: false },
+  corporate: { pronouns: "he/him", headline: "Corporate learning and development partner", bio: "I connect business teams with speakers, facilitators, and learning experiences that create lasting workplace change.", location: "Singapore", interests: ["corporate learning", "leadership", "talent development"], website_url: "https://example.com/", linkedin_url: "https://www.linkedin.com/", availability: "Seeking speakers for corporate programmes", topics: "Leadership development and workplace learning", years: 12, available: false, showEmail: true },
+  guest: { pronouns: "", headline: "Open House visitor", bio: "I am exploring APSS and learning more about the professional speaking community.", location: "Singapore", interests: ["public speaking"], website_url: "", linkedin_url: "", availability: "", topics: "", years: 0, available: false, showEmail: false },
+};
+for (const [key, profile] of Object.entries(memberProfileSpecs)) {
+  const { error: profileError } = await supabase.from("profiles").update({ pronouns: profile.pronouns || null, headline: profile.headline, bio: profile.bio, location: profile.location, interests: profile.interests, website_url: profile.website_url || null, linkedin_url: profile.linkedin_url || null, updated_at: new Date().toISOString() }).eq("id", accounts[key].id);
+  if (profileError) throw profileError;
+  const { error: directoryError } = await supabase.from("tenant_member_profiles").upsert({ tenant_id: tenant.id, user_id: accounts[key].id, directory_visibility: key === "guest" ? "admins" : "members", show_email: profile.showEmail, show_location: true, show_activity: true, show_courses: true, show_events: true, availability: profile.availability || null, custom_values: { "speaking-topics": profile.topics, "years-speaking": profile.years, "available-for-speaking": profile.available }, updated_at: new Date().toISOString() });
+  if (directoryError) throw directoryError;
+}
+
+const profileFieldSpecs = [
+  { field_key: "speaking-topics", label: "Speaking topics", field_type: "text", help_text: "The subjects you speak or facilitate on.", visibility: "members", is_required: false, position: 10 },
+  { field_key: "years-speaking", label: "Years of speaking experience", field_type: "number", help_text: "Approximate professional speaking experience.", visibility: "members", is_required: false, position: 20 },
+  { field_key: "available-for-speaking", label: "Available for speaking", field_type: "boolean", help_text: "Let members know whether you welcome speaking enquiries.", visibility: "members", is_required: false, position: 30 },
+];
+for (const field of profileFieldSpecs) {
+  const { error } = await supabase.from("member_profile_fields").upsert({ tenant_id: tenant.id, ...field, options: [], is_active: true, updated_at: new Date().toISOString() }, { onConflict: "tenant_id,field_key" });
+  if (error) throw error;
+}
+
+const tagSpecs = [
+  { key: "keynote", name: "Keynote Speaker", color: "#f45124", members: ["owner"] },
+  { key: "facilitator", name: "Facilitator", color: "#347487", members: ["admin", "moderator", "student"] },
+  { key: "course-alumni", name: "Course Alumni", color: "#7357a5", members: ["moderator", "student"] },
+  { key: "new-member", name: "New Member", color: "#c78b24", members: ["member"] },
+  { key: "corporate", name: "Corporate Partner", color: "#1e5b70", members: ["corporate"] },
+];
+const directoryTags = {};
+for (const spec of tagSpecs) {
+  const { data, error } = await supabase.from("tags").upsert({ tenant_id: tenant.id, name: spec.name, color: spec.color }, { onConflict: "tenant_id,name" }).select("id").single();
+  if (error) throw error;
+  directoryTags[spec.key] = data;
+  for (const memberKey of spec.members) {
+    const { error: assignmentError } = await supabase.from("member_tags").upsert({ tenant_id: tenant.id, tag_id: data.id, user_id: accounts[memberKey].id }, { onConflict: "tag_id,user_id" });
+    if (assignmentError) throw assignmentError;
+  }
+}
+
+const segmentSpecs = [
+  { name: "Professional members", criteria: { membershipTier: "professional" } },
+  { name: "Singapore speakers", criteria: { location: "Singapore", tagId: directoryTags.keynote.id } },
+  { name: "Course alumni", criteria: { tagId: directoryTags["course-alumni"].id } },
+];
+for (const segment of segmentSpecs) {
+  const { error } = await supabase.from("member_segments").upsert({ tenant_id: tenant.id, ...segment, created_by: accounts.owner.id, updated_at: new Date().toISOString() }, { onConflict: "tenant_id,name" });
   if (error) throw error;
 }
 const { error: subscriptionError } = await supabase.from("tenant_subscriptions").upsert({ tenant_id: tenant.id, plan_id: "pro", status: "active", billing_provider: "local", updated_at: new Date().toISOString() });

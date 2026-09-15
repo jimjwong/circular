@@ -11,8 +11,8 @@ const owner = createClient(url, publishableKey, { auth: { persistSession: false,
 const admin = createClient(url, secretKey, { auth: { persistSession: false, autoRefreshToken: false } });
 
 const [{ data: memberSession, error: memberLogin }, { error: ownerLogin }] = await Promise.all([
-  member.auth.signInWithPassword({ email: "member@circular.demo", password }),
-  owner.auth.signInWithPassword({ email: "owner@circular.demo", password }),
+  member.auth.signInWithPassword({ email: "member@commune.demo", password }),
+  owner.auth.signInWithPassword({ email: "owner@commune.demo", password }),
 ]);
 if (memberLogin) throw memberLogin;
 if (ownerLogin) throw ownerLogin;

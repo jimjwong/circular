@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { switchOrganization } from "@/app/actions/organizations";
-import { CircularApp } from "@/components/circular-app";
+import { CommuneApp } from "@/components/commune-app";
 import type { CurrentUser, OrganizationSummary } from "@/lib/auth/types";
 
 export function AuthenticatedApp({ organizations, activeOrganizationId, currentUser, initialView, grantedPermissions }: { organizations: OrganizationSummary[]; activeOrganizationId: string; currentUser: CurrentUser; initialView?: string; grantedPermissions: string[] }) {
@@ -15,5 +15,5 @@ export function AuthenticatedApp({ organizations, activeOrganizationId, currentU
     startTransition(() => router.refresh());
   }
 
-  return <CircularApp key={initialView ?? "overview"} organizations={organizations} activeOrganizationId={activeOrganizationId} currentUser={currentUser} initialView={initialView} grantedPermissions={grantedPermissions} onSwitchOrganization={handleSwitch}/>;
+  return <CommuneApp key={initialView ?? "overview"} organizations={organizations} activeOrganizationId={activeOrganizationId} currentUser={currentUser} initialView={initialView} grantedPermissions={grantedPermissions} onSwitchOrganization={handleSwitch}/>;
 }

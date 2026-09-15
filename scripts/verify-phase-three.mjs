@@ -11,8 +11,8 @@ function client() {
 const owner = client();
 const member = client();
 const [{ error: ownerSignInError }, { error: memberSignInError }] = await Promise.all([
-  owner.auth.signInWithPassword({ email: "owner@circular.local", password: "Circular123!" }),
-  member.auth.signInWithPassword({ email: "phase-one-member@circular.local", password: "PhaseOne123!" }),
+  owner.auth.signInWithPassword({ email: "owner@commune.local", password: "Commune123!" }),
+  member.auth.signInWithPassword({ email: "phase-one-member@commune.local", password: "PhaseOne123!" }),
 ]);
 if (ownerSignInError) throw ownerSignInError;
 if (memberSignInError) throw memberSignInError;
@@ -145,7 +145,7 @@ let { data: attachment } = await member.from("post_attachments").select("id, sto
 if (!attachment) {
   const upload = await member.storage.from("community-media").upload(
     attachmentPath,
-    new Blob(["Circular private attachment verification"], { type: "application/pdf" }),
+    new Blob(["Commune private attachment verification"], { type: "application/pdf" }),
     { contentType: "application/pdf", upsert: false },
   );
   if (upload.error && !upload.error.message.toLowerCase().includes("already exists")) throw upload.error;

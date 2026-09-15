@@ -12,11 +12,11 @@ async function session(email) {
 }
 
 const [admin, moderator, associate, professional, guest] = await Promise.all([
-  session("admin@circular.demo"),
-  session("moderator@circular.demo"),
-  session("member@circular.demo"),
-  session("student@circular.demo"),
-  session("guest@circular.demo"),
+  session("admin@commune.demo"),
+  session("moderator@commune.demo"),
+  session("member@commune.demo"),
+  session("student@commune.demo"),
+  session("guest@commune.demo"),
 ]);
 
 const { data: membership } = await admin.from("tenant_memberships").select("tenant_id").limit(1).single();

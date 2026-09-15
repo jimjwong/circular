@@ -8,8 +8,8 @@ const platformOwner = createClient(url, publishableKey, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 const { error: signInError } = await platformOwner.auth.signInWithPassword({
-  email: "owner@circular.local",
-  password: "Circular123!",
+  email: "owner@commune.local",
+  password: "Commune123!",
 });
 if (signInError) throw signInError;
 

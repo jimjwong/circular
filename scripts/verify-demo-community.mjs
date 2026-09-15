@@ -5,11 +5,11 @@ const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 if (!url || !key) throw new Error("Supabase environment variables are required.");
 const password = "Demo123!";
 const specs = [
-  ["owner", "owner@circular.demo", "owner"],
-  ["admin", "admin@circular.demo", "admin"],
-  ["moderator", "moderator@circular.demo", "moderator"],
-  ["member", "member@circular.demo", "member"],
-  ["student", "student@circular.demo", "member"],
+  ["owner", "owner@commune.demo", "owner"],
+  ["admin", "admin@commune.demo", "admin"],
+  ["moderator", "moderator@commune.demo", "moderator"],
+  ["member", "member@commune.demo", "member"],
+  ["student", "student@commune.demo", "member"],
 ];
 const sessions = {};
 const userIds = {};
@@ -19,7 +19,7 @@ for (const [keyName, email] of specs) {
   if (error) throw new Error(`${email} login failed: ${error.message}`);
   sessions[keyName] = client;
 }
-const { data: tenant, error: tenantError } = await sessions.owner.from("tenants").select("id").eq("slug", "creator-collective-demo").single();
+const { data: tenant, error: tenantError } = await sessions.owner.from("tenants").select("id").eq("slug", "apss").single();
 if (tenantError) throw tenantError;
 
 for (const [keyName, , role] of specs) {
@@ -40,12 +40,12 @@ const [{ count: ownerSpaces }, { data: memberPrivate }, { data: studentPrivate }
   sessions.member.from("member_onboarding").select("user_id", { count: "exact", head: true }).eq("tenant_id", tenant.id).not("completed_at", "is", null),
   sessions.member.from("member_onboarding").select("user_id").eq("tenant_id", tenant.id).eq("user_id", userIds.member).maybeSingle(),
 ]);
-if ((ownerSpaces ?? 0) < 6 || memberPrivate || !studentPrivate || (postCount ?? 0) < 6 || courseCount !== 2 || lessonCount !== 5 || progressCount !== 5 || !eventCount || (completedIntroductions ?? 0) < 2 || memberOnboarding) {
+if ((ownerSpaces ?? 0) < 6 || memberPrivate || !studentPrivate || (postCount ?? 0) < 6 || (courseCount ?? 0) < 1 || lessonCount !== 5 || progressCount !== 5 || !eventCount || (completedIntroductions ?? 0) < 2 || memberOnboarding) {
   throw new Error(`Demo content is incomplete: ${JSON.stringify({ ownerSpaces, memberPrivate: Boolean(memberPrivate), studentPrivate: Boolean(studentPrivate), postCount, courseCount, lessonCount, progressCount, eventCount, completedIntroductions, memberReadyForOnboarding: !memberOnboarding })}`);
 }
 
 const platform = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
-const { error: platformLogin } = await platform.auth.signInWithPassword({ email: "superadmin@circular.demo", password });
+const { error: platformLogin } = await platform.auth.signInWithPassword({ email: "superadmin@commune.demo", password });
 if (platformLogin) throw platformLogin;
 const { data: staff } = await platform.from("platform_staff").select("role").single();
 if (staff?.role !== "super_admin") throw new Error("Demo platform account is not a super administrator.");

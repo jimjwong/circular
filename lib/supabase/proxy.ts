@@ -1,7 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { isPossibleDirectoryMount, SITE_RENDER_PREFIX } from "@/lib/website/routing";
 
-const PUBLIC_PATHS = ["/login", "/signup", "/forgot-password", "/auth", "/verify", "/badges/verify", "/api/badges/verify", "/.well-known"];
+const PUBLIC_PATHS = ["/login", "/signup", "/forgot-password", "/auth", "/verify", "/badges/verify", "/api/badges/verify", "/.well-known", SITE_RENDER_PREFIX];
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -24,7 +25,11 @@ export async function updateSession(request: NextRequest) {
   });
 
   const { data } = await supabase.auth.getClaims();
-  const isPublic = PUBLIC_PATHS.some((path) => request.nextUrl.pathname.startsWith(path));
+  // A path whose first segment is not an application route may be a site's directory
+  // mount, which must render for signed-out visitors. The route still enforces auth on
+  // its non-site branch, so letting it through only defers the check.
+  const isPublic = PUBLIC_PATHS.some((path) => request.nextUrl.pathname.startsWith(path))
+    || isPossibleDirectoryMount(request.nextUrl.pathname);
   const isAuthenticated = Boolean(data?.claims?.sub);
 
   if (!isAuthenticated && !isPublic) {

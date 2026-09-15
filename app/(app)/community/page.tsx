@@ -145,6 +145,7 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
       <nav aria-label="Community tools" className="mb-5 flex w-fit rounded-xl border border-[#dfe6e1] bg-[#eef2ef] p-1 text-xs font-bold">
         <Link href="/spaces" className="rounded-lg px-4 py-2 text-[#6d7c74] hover:text-[#205f46]">Spaces</Link>
         <Link href="/community" aria-current="page" className="rounded-lg bg-white px-4 py-2 text-[#205f46] shadow-sm">Posts &amp; media</Link>
+        <Link href="/members" className="rounded-lg px-4 py-2 text-[#6d7c74] hover:text-[#205f46]">Members</Link>
       </nav>
       <section className="mb-6 grid gap-4 sm:grid-cols-3">
         {[["Spaces", spaces?.length ?? 0, Hash], [activeSpace ? `${activeSpace.name} posts` : "Published posts", postCount ?? 0, Send], ["Active members", `${memberCount ?? 0} / ${Number(memberLimit ?? 0).toLocaleString()}`, Users]].map(([label, value, Icon]) => { const MetricIcon = Icon as typeof Hash; return <div key={String(label)} className="rounded-[20px] border border-[#e0e7e2] bg-white p-5"><div className="flex items-center justify-between"><span className="text-xs text-[#74827a]">{String(label)}</span><MetricIcon size={16} className="text-[#317657]"/></div><b className="font-display mt-3 block text-2xl">{String(value)}</b></div>; })}

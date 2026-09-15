@@ -55,5 +55,5 @@ export function ThemeEditor({ initialPreset, initialTheme, canManage }: { initia
 }
 
 function FontSelect({ label, value, onChange }: { label: string; value: ThemeConfig["headingFont"]; onChange: (value: ThemeConfig["headingFont"]) => void }) {
-  return <label><span className="mb-2 block text-xs font-semibold">{label}</span><select value={value} onChange={(event) => onChange(event.target.value as ThemeConfig["headingFont"])} className="theme-field h-11 w-full rounded-xl border bg-transparent px-3 text-xs outline-none">{THEME_FONT_OPTIONS.map((font) => <option key={font.id} value={font.id}>{font.label}</option>)}</select><span className="theme-muted mt-2 block text-lg" style={{ fontFamily: THEME_FONT_OPTIONS.find((font) => font.id === value)?.stack }}>Circular Community</span></label>;
+  return <label><span className="mb-2 block text-xs font-semibold">{label}</span><select value={value} onChange={(event) => onChange(event.target.value as ThemeConfig["headingFont"])} className="theme-field h-11 w-full rounded-xl border bg-transparent px-3 text-xs outline-none">{THEME_FONT_OPTIONS.map((font) => <option key={font.id} value={font.id}>{font.label}</option>)}</select><span className="theme-muted mt-2 block text-lg" style={{ fontFamily: THEME_FONT_OPTIONS.find((font) => font.id === value)?.stack }}>Commune Community</span></label>;
 }

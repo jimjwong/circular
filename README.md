@@ -1,6 +1,6 @@
-# Circular
+# Commune
 
-Circular is a local-first, multi-tenant community SaaS prototype inspired by the product breadth of Circle. It combines community, courses, events, live experiences, CRM, email, workflows, AI agents, a website builder, payments, and analytics in one responsive Next.js application.
+Commune is a local-first, multi-tenant community SaaS prototype inspired by the product breadth of Circle. It combines community, courses, events, live experiences, CRM, email, workflows, AI agents, a website builder, payments, and analytics in one responsive Next.js application.
 
 ## Run locally
 

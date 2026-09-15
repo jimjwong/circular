@@ -1,5 +1,5 @@
 {
-  "name": "circular",
+  "name": "commune",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -25,9 +25,19 @@
     "verify:demo": "node --env-file=.env.local scripts/verify-demo-community.mjs",
     "verify:introduction": "node --env-file=.env.local scripts/verify-member-introduction.mjs",
     "verify:themes": "node --env-file=.env.local scripts/verify-themes.mjs",
-    "verify:rbac": "node --env-file=.env.local scripts/verify-rbac.mjs"
+    "verify:rbac": "node --env-file=.env.local scripts/verify-rbac.mjs",
+    "email:up": "docker compose --env-file .env.listmonk -f infra/listmonk/compose.yml up -d",
+    "email:down": "docker compose --env-file .env.listmonk -f infra/listmonk/compose.yml down",
+    "email:logs": "docker compose --env-file .env.listmonk -f infra/listmonk/compose.yml logs -f app",
+    "email:configure": "node --env-file=.env.local scripts/configure-listmonk-local.mjs",
+    "verify:email": "node --env-file=.env.local scripts/verify-email-marketing.mjs",
+    "verify:members": "node --env-file=.env.local scripts/verify-member-directory.mjs",
+    "seed:website": "node --env-file=.env.local scripts/seed-website-demo.mjs",
+    "verify:website": "node --env-file=.env.local scripts/verify-website.mjs"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
     "@supabase/ssr": "^0.12.5",
     "@supabase/supabase-js": "^2.57.4",
     "clsx": "^2.1.1",

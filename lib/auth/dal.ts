@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { CurrentUser, OrganizationSummary, PlatformRole, TenantRole } from "@/lib/auth/types";
 
-const ACTIVE_TENANT_COOKIE = "circular-active-tenant";
+const ACTIVE_TENANT_COOKIE = "commune-active-tenant";
 
 export const verifyUser = cache(async (): Promise<CurrentUser> => {
   const supabase = await createClient();

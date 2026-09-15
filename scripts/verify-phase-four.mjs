@@ -8,8 +8,8 @@ const owner = makeClient();
 const member = makeClient();
 
 const [{ error: ownerLogin }, { error: memberLogin }] = await Promise.all([
-  owner.auth.signInWithPassword({ email: "owner@circular.local", password: "Circular123!" }),
-  member.auth.signInWithPassword({ email: "phase-one-member@circular.local", password: "PhaseOne123!" }),
+  owner.auth.signInWithPassword({ email: "owner@commune.local", password: "Commune123!" }),
+  member.auth.signInWithPassword({ email: "phase-one-member@commune.local", password: "PhaseOne123!" }),
 ]);
 if (ownerLogin) throw ownerLogin;
 if (memberLogin) throw memberLogin;

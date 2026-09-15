@@ -1,4 +1,4 @@
--- Circular multi-tenant foundation
+-- Commune multi-tenant foundation
 -- Apply with `supabase db reset` locally or paste into the Supabase SQL editor.
 
 create extension if not exists "pgcrypto";
