@@ -325,9 +325,30 @@ function speakerProfileTree() {
         },
         { component: "Divider", style: { margin: "28px 0", "border-top": `1px solid ${BORDER}` } },
         { component: "CollectionField", props: { field: "bio" }, style: { display: "block", "font-size": "15px", "line-height": "1.8", color: "#3a3a3a", "white-space": "pre-line" } },
-        { component: "Container", style: { "margin-top": "28px", display: "flex", gap: "16px", "align-items": "center" }, children: [
+
+        { component: "Heading", text: "Follow me on", props: { level: "h3" }, style: { "font-size": "13px", "font-weight": "700", color: INK, margin: "32px 0 10px" } },
+        {
+          component: "Container", style: { display: "flex", gap: "10px", "flex-wrap": "wrap" },
+          children: [
+            ["linkedin_url", "LinkedIn"], ["twitter_url", "Twitter"], ["youtube_url", "YouTube"],
+            ["facebook_url", "Facebook"], ["instagram_url", "Instagram"],
+          ].map(([field, label]) => ({
+            component: "CollectionField", props: { field, hrefTemplate: ":self", linkLabel: label },
+            style: { display: "inline-block", padding: "8px 16px", "border-radius": "999px", border: `1px solid ${BORDER}`, "font-size": "12px", "font-weight": "600", color: TEAL, "text-decoration": "none" },
+          })),
+        },
+
+        { component: "Heading", text: "Contact me", props: { level: "h3" }, style: { "font-size": "13px", "font-weight": "700", color: INK, margin: "24px 0 10px" } },
+        {
+          component: "Container", style: { display: "flex", "flex-direction": "column", gap: "8px" },
+          children: [
+            { component: "CollectionField", props: { field: "contact_email", hrefTemplate: ":self" }, style: { display: "block", "font-size": "13px", color: TEAL, "font-weight": "600", "text-decoration": "none" } },
+            { component: "CollectionField", props: { field: "website_url", hrefTemplate: ":self" }, style: { display: "block", "font-size": "13px", color: TEAL, "font-weight": "600", "text-decoration": "none" } },
+          ],
+        },
+
+        { component: "Container", style: { "margin-top": "28px" }, children: [
           { component: "Link", text: "← Back to speakers", props: { href: "/speakers", target: "_self" }, style: { color: ORANGE, "font-weight": "700", "font-size": "13px", "text-decoration": "none" } },
-          { component: "CollectionField", props: { field: "website_url", hrefTemplate: ":self" }, style: { color: TEAL, "font-weight": "700", "font-size": "13px", "text-decoration": "none" } },
         ] },
       ] }],
     },

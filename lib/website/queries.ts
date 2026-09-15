@@ -217,6 +217,9 @@ export async function loadPublicPage(site: WebsiteSite, requestedPath: string): 
       data: {
         headline: member.headline ?? "", bio: member.bio ?? "", avatar_url: member.avatar_url ?? "",
         website_url: member.website_url ?? "", linkedin_url: member.linkedin_url ?? "",
+        contact_email: member.contact_email ?? "",
+        twitter_url: member.twitter_url ?? "", youtube_url: member.youtube_url ?? "",
+        facebook_url: member.facebook_url ?? "", instagram_url: member.instagram_url ?? "",
         interests: (member.interests ?? []).join(", "),
         credential: typeof custom.credential === "string" ? custom.credential : "",
       },

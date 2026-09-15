@@ -73,6 +73,10 @@ for (const speaker of speakers) {
   const { error: profileError } = await supabase.from("profiles").upsert({
     id: user.id, display_name: speaker.name, email, avatar_url: speaker.photo || null,
     bio, headline, interests: speaker.categories, website_url: speaker.website || null,
+    linkedin_url: speaker.linkedin || null,
+    contact_email: speaker.contactEmail || null, twitter_url: speaker.twitter || null,
+    youtube_url: speaker.youtube || null, facebook_url: speaker.facebook || null,
+    instagram_url: speaker.instagram || null,
     timezone: "Asia/Singapore", updated_at: new Date().toISOString(),
   });
   if (profileError) throw profileError;

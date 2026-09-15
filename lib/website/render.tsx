@@ -30,6 +30,11 @@ export type PublicMemberRow = {
   interests: string[] | null;
   website_url: string | null;
   linkedin_url: string | null;
+  contact_email: string | null;
+  twitter_url: string | null;
+  youtube_url: string | null;
+  facebook_url: string | null;
+  instagram_url: string | null;
   custom_values: Record<string, unknown> | null;
 };
 
@@ -160,18 +165,26 @@ function renderDataComponent(instance: Instance, props: RenderedProps, className
         return <img className={className} src={src} alt="" loading="lazy" />;
       }
       const hrefTemplate = typeof props.hrefTemplate === "string" ? props.hrefTemplate.trim() : "";
+      // A static override for the link's visible text — e.g. "Follow on Twitter"
+      // instead of the raw URL — leaving the destination untouched either way.
+      const linkLabel = typeof props.linkLabel === "string" && props.linkLabel.trim() ? props.linkLabel.trim() : null;
       // ":self" means the field's own value already is the destination — e.g. a
       // member's website_url — as opposed to a template needing :slug substitution.
       if (hrefTemplate === ":self") {
-        const href = safeHref(value);
-        return href ? <a className={className} href={href} target="_blank" rel="noreferrer">{value}</a> : null;
+        // A bare address (no scheme) is stored as plain "name@domain" so it displays
+        // cleanly; the mailto: scheme is added only for the destination, never the text.
+        const isBareEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+        const href = safeHref(isBareEmail ? `mailto:${value}` : value);
+        if (!href) return null;
+        const external = !href.startsWith("mailto:");
+        return <a className={className} href={href} target={external ? "_blank" : undefined} rel={external ? "noreferrer" : undefined}>{linkLabel ?? value}</a>;
       }
       // A CollectionList's per-entry template has no other way to target that same
       // entry's own detail page — a Link/Button's href is one static string shared by
       // every repeated entry — so :slug is substituted here, per entry, at render time.
       if (hrefTemplate && context.entry) {
         const href = resolveSiteHref(hrefTemplate.replaceAll(":slug", context.entry.slug), context.data);
-        return <a className={className} href={href}>{value}</a>;
+        return <a className={className} href={href}>{linkLabel ?? value}</a>;
       }
       return <span className={className}>{value}</span>;
     }

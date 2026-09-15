@@ -41,11 +41,20 @@ const LINK_FIELDS: PropField[] = [
 
 const text = (value: unknown, fallback = "") => (typeof value === "string" && value.trim() ? value : fallback);
 
-/** Only http(s) links are emitted, so a stored value can never become a javascript: URL. */
+/**
+ * Only http(s)/mailto links are emitted, so a stored value can never become a
+ * javascript: URL. mailto is checked against the address itself, not URL-parsed —
+ * new URL("mailto:x") happily accepts almost anything after the colon, so this is the
+ * one case where a matching email pattern is the actual safety check.
+ */
 export function safeHref(value: unknown) {
   const href = text(value);
   if (!href) return undefined;
   if (href.startsWith("/") || href.startsWith("#")) return href;
+  if (href.startsWith("mailto:")) {
+    const address = href.slice("mailto:".length).split("?")[0];
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address) ? href : undefined;
+  }
   try {
     const url = new URL(href);
     return url.protocol === "http:" || url.protocol === "https:" ? url.toString() : undefined;
@@ -267,6 +276,7 @@ export const WEBSITE_COMPONENTS: Record<string, ComponentMeta> = {
       { key: "field", label: "Field key", type: "text", placeholder: "title" },
       { key: "asImage", label: "Render as image", type: "boolean" },
       { key: "hrefTemplate", label: "Link to (:slug for the entry, :self to use this field's own value)", type: "text", placeholder: "/blog/:slug" },
+      { key: "linkLabel", label: "Link text (blank = show the field's value)", type: "text", placeholder: "Follow on Twitter" },
     ],
     // The renderer (which has the entry data) fills this in; asImage/hrefTemplate decide
     // img vs span vs anchor there.
