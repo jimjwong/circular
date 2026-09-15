@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { componentMeta, DATA_COMPONENTS, type RenderedProps } from "@/lib/website/components";
+import { componentMeta, DATA_COMPONENTS, safeHref, type RenderedProps } from "@/lib/website/components";
 import { instanceClassNames } from "@/lib/website/css";
 import { matchPagePath, type SitePageRoute } from "@/lib/website/routing";
 import type { Instance, WebsiteDocument } from "@/lib/website/schema";
@@ -127,8 +127,16 @@ function renderDataComponent(instance: Instance, props: RenderedProps, className
         </div>
       );
     }
-    case "CollectionField":
-      return <span className={className}>{entryValue(context.entry, String(props.field ?? "title"))}</span>;
+    case "CollectionField": {
+      const value = entryValue(context.entry, String(props.field ?? "title"));
+      if (props.asImage === true || props.asImage === "true") {
+        const src = safeHref(value);
+        if (!src) return <div className={className} style={{ background: "#e8ece9", minHeight: 120 }} aria-hidden />;
+        // eslint-disable-next-line @next/next/no-img-element
+        return <img className={className} src={src} alt="" loading="lazy" />;
+      }
+      return <span className={className}>{value}</span>;
+    }
     case "PricingTable": {
       const plans = String(props.plans ?? "").split("\n").map((line) => line.split("|")).filter((parts) => parts[0]?.trim());
       return (

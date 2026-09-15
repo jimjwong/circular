@@ -42,7 +42,7 @@ const LINK_FIELDS: PropField[] = [
 const text = (value: unknown, fallback = "") => (typeof value === "string" && value.trim() ? value : fallback);
 
 /** Only http(s) links are emitted, so a stored value can never become a javascript: URL. */
-function safeHref(value: unknown) {
+export function safeHref(value: unknown) {
   const href = text(value);
   if (!href) return undefined;
   if (href.startsWith("/") || href.startsWith("#")) return href;
@@ -259,7 +259,14 @@ export const WEBSITE_COMPONENTS: Record<string, ComponentMeta> = {
   CollectionField: {
     label: "Collection field", category: "Commune", icon: Baseline, acceptsChildren: false,
     defaultProps: { field: "title" },
-    fields: [{ key: "field", label: "Field key", type: "text", placeholder: "title" }],
+    // "Render as image" is a per-placement choice rather than inferred from the
+    // collection's declared field type, so one field (e.g. a photo URL) can be shown as
+    // text in one layout and as an image in another without changing the collection.
+    fields: [
+      { key: "field", label: "Field key", type: "text", placeholder: "title" },
+      { key: "asImage", label: "Render as image", type: "boolean" },
+    ],
+    // The renderer (which has the entry data) fills this in; asImage decides img vs span there.
     render: ({ className }) => <span className={className} />,
   },
   PricingTable: {
