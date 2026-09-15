@@ -3,6 +3,15 @@ import { componentMeta, DATA_COMPONENTS, safeHref, type RenderedProps } from "@/
 import { instanceClassNames } from "@/lib/website/css";
 import { matchPagePath, type SitePageRoute } from "@/lib/website/routing";
 import type { Instance, WebsiteDocument } from "@/lib/website/schema";
+import { MemberDirectory, type PublicMemberCard } from "@/components/website/member-directory";
+
+/** "CSP, Global Speaking Fellow" -> the same filter-facing labels used in the UI. */
+function deriveMemberTypes(credential: string): string[] {
+  const types: string[] = [];
+  if (/global speaking fellow/i.test(credential)) types.push("Global Speaking Fellow");
+  if (/\bCSP\b/i.test(credential)) types.push("Certified Speaking Professional (CSP)");
+  return types;
+}
 
 export type CollectionEntry = {
   id: string;
@@ -11,11 +20,26 @@ export type CollectionEntry = {
   data: Record<string, unknown>;
 };
 
+/** Row shape of the public.website_public_members() RPC — real Member Management data. */
+export type PublicMemberRow = {
+  user_id: string;
+  display_name: string;
+  avatar_url: string | null;
+  bio: string | null;
+  headline: string | null;
+  interests: string[] | null;
+  website_url: string | null;
+  linkedin_url: string | null;
+  custom_values: Record<string, unknown> | null;
+};
+
 export type WebsiteRenderData = {
   events: { id: string; title: string; description: string | null; starts_at: string; location_url: string | null }[];
   courses: { id: string; title: string; description: string | null }[];
   /** Published entries keyed by collection id, for CollectionList blocks. */
   entries: Record<string, CollectionEntry[]>;
+  /** Public-listed Member Management profiles, for the MemberDirectory block. */
+  members: PublicMemberRow[];
   signupHref: string;
   /** Prefix the site is served under, e.g. "/collective" for a directory mount, "" for a host. */
   basePath: string;
@@ -24,7 +48,7 @@ export type WebsiteRenderData = {
 };
 
 export const EMPTY_RENDER_DATA: WebsiteRenderData = {
-  events: [], courses: [], entries: {}, signupHref: "/signup", basePath: "", pageRoutes: [],
+  events: [], courses: [], entries: {}, members: [], signupHref: "/signup", basePath: "", pageRoutes: [],
 };
 
 /**
@@ -136,6 +160,12 @@ function renderDataComponent(instance: Instance, props: RenderedProps, className
         return <img className={className} src={src} alt="" loading="lazy" />;
       }
       const hrefTemplate = typeof props.hrefTemplate === "string" ? props.hrefTemplate.trim() : "";
+      // ":self" means the field's own value already is the destination — e.g. a
+      // member's website_url — as opposed to a template needing :slug substitution.
+      if (hrefTemplate === ":self") {
+        const href = safeHref(value);
+        return href ? <a className={className} href={href} target="_blank" rel="noreferrer">{value}</a> : null;
+      }
       // A CollectionList's per-entry template has no other way to target that same
       // entry's own detail page — a Link/Button's href is one static string shared by
       // every repeated entry — so :slug is substituted here, per entry, at render time.
@@ -167,6 +197,28 @@ function renderDataComponent(instance: Instance, props: RenderedProps, className
           <a className="ws-block-cta" href={data.signupHref}>{String(props.buttonLabel ?? "Create your account")}</a>
         </div>
       );
+    case "MemberDirectory": {
+      const cards: PublicMemberCard[] = data.members.map((member) => {
+        const credential = typeof member.custom_values?.credential === "string" ? member.custom_values.credential : "";
+        return {
+          id: member.user_id,
+          name: member.display_name,
+          headline: member.headline,
+          bio: member.bio,
+          avatarUrl: member.avatar_url,
+          href: resolveSiteHref(`/speakers/${member.user_id}`, data),
+          categories: member.interests ?? [],
+          memberTypes: deriveMemberTypes(credential),
+        };
+      });
+      const limit = Number(props.limit) || 0;
+      const showFilters = props.showFilters !== false && props.showFilters !== "false";
+      return (
+        <div className={className}>
+          <MemberDirectory members={cards} accent={String(props.accentColor ?? "#183f30")} limit={limit || undefined} showFilters={showFilters} />
+        </div>
+      );
+    }
     default:
       return null;
   }

@@ -34,6 +34,7 @@
     "verify:members": "node --env-file=.env.local scripts/verify-member-directory.mjs",
     "seed:website": "node --env-file=.env.local scripts/seed-website-demo.mjs",
     "seed:apss-website": "node --env-file=.env.local scripts/seed-apss-website.mjs",
+    "seed:apss-speakers": "node --env-file=.env.local scripts/seed-apss-speakers-directory.mjs",
     "verify:website": "node --env-file=.env.local scripts/verify-website.mjs"
   },
   "dependencies": {

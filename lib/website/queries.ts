@@ -3,7 +3,7 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { matchPagePath, normalizeHost, normalizePath } from "@/lib/website/routing";
 import { parseDocument, type WebsiteDocument } from "@/lib/website/schema";
-import { EMPTY_RENDER_DATA, type CollectionEntry, type WebsiteRenderData } from "@/lib/website/render";
+import { EMPTY_RENDER_DATA, type CollectionEntry, type PublicMemberRow, type WebsiteRenderData } from "@/lib/website/render";
 
 export type WebsiteSite = {
   id: string;
@@ -24,7 +24,7 @@ export type WebsitePage = {
   site_id: string;
   name: string;
   path: string;
-  kind: "page" | "landing" | "event" | "funnel" | "collection_template";
+  kind: "page" | "landing" | "event" | "funnel" | "collection_template" | "member_profile";
   title: string | null;
   description: string | null;
   social_image_url: string | null;
@@ -203,6 +203,27 @@ export async function loadPublicPage(site: WebsiteSite, requestedPath: string): 
   const version = Array.isArray(versionRow) ? versionRow[0] : versionRow;
   const document = parseDocument(version?.document);
 
+  if (match.page.kind === "member_profile") {
+    if (!match.param) return null;
+    // Adapted into the same CollectionEntry shape a CMS-backed template uses, so
+    // CollectionField, asImage, and hrefTemplate all work unchanged on this page —
+    // the only difference is where the record came from.
+    const { data: memberRows } = await supabase.rpc("website_public_members", { check_site_id: site.id, max_count: 200 });
+    const member = ((memberRows ?? []) as PublicMemberRow[]).find((row) => row.user_id === match.param);
+    if (!member) return null;
+    const custom = (member.custom_values ?? {}) as Record<string, unknown>;
+    const entry: CollectionEntry = {
+      id: member.user_id, slug: member.user_id, title: member.display_name,
+      data: {
+        headline: member.headline ?? "", bio: member.bio ?? "", avatar_url: member.avatar_url ?? "",
+        website_url: member.website_url ?? "", linkedin_url: member.linkedin_url ?? "",
+        interests: (member.interests ?? []).join(", "),
+        credential: typeof custom.credential === "string" ? custom.credential : "",
+      },
+    };
+    return { page: match.page, document, routes, entry };
+  }
+
   if (match.page.kind !== "collection_template") return { page: match.page, document, routes };
 
   if (!match.param || !match.page.collection_id) return null;
@@ -226,7 +247,7 @@ export async function loadRenderData(
 ): Promise<WebsiteRenderData> {
   const base = { ...EMPTY_RENDER_DATA, basePath: context.basePath, pageRoutes: context.routes };
   const components = new Set(document.instances.map((instance) => instance.component));
-  if (!["EventList", "CourseList", "CollectionList"].some((name) => components.has(name))) {
+  if (!["EventList", "CourseList", "CollectionList", "MemberDirectory"].some((name) => components.has(name))) {
     return base;
   }
 
@@ -240,6 +261,10 @@ export async function loadRenderData(
   if (components.has("CourseList")) {
     const { data: courses } = await supabase.rpc("website_public_courses", { check_site_id: site.id, max_count: 24 });
     data.courses = (courses ?? []) as WebsiteRenderData["courses"];
+  }
+  if (components.has("MemberDirectory")) {
+    const { data: members } = await supabase.rpc("website_public_members", { check_site_id: site.id, max_count: 200 });
+    data.members = (members ?? []) as WebsiteRenderData["members"];
   }
   if (components.has("CollectionList")) {
     const collectionIds = [...new Set(document.props

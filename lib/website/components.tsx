@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import {
   AlignLeft, Baseline, Box, CalendarDays, Columns3, CreditCard, GraduationCap, Heading1,
   Image as ImageIcon, Layout, Link2, List, Minus, MousePointerClick, Move, Quote, Rows3,
-  Send, SquareStack, Tag, Type, UserRoundPlus,
+  Send, SquareStack, Tag, Type, UserRoundPlus, Users,
   type LucideIcon,
 } from "lucide-react";
 
@@ -266,7 +266,7 @@ export const WEBSITE_COMPONENTS: Record<string, ComponentMeta> = {
     fields: [
       { key: "field", label: "Field key", type: "text", placeholder: "title" },
       { key: "asImage", label: "Render as image", type: "boolean" },
-      { key: "hrefTemplate", label: "Link to (use :slug for the entry)", type: "text", placeholder: "/blog/:slug" },
+      { key: "hrefTemplate", label: "Link to (:slug for the entry, :self to use this field's own value)", type: "text", placeholder: "/blog/:slug" },
     ],
     // The renderer (which has the entry data) fills this in; asImage/hrefTemplate decide
     // img vs span vs anchor there.
@@ -290,10 +290,20 @@ export const WEBSITE_COMPONENTS: Record<string, ComponentMeta> = {
     ],
     render: ({ className }) => <div className={className} />,
   },
+  MemberDirectory: {
+    label: "Member directory", category: "Commune", icon: Users, acceptsChildren: false,
+    defaultProps: { accentColor: "#183f30", showFilters: true, limit: 24 },
+    fields: [
+      { key: "accentColor", label: "Accent colour (hex)", type: "text", placeholder: "#183f30" },
+      { key: "showFilters", label: "Show search & filters", type: "boolean" },
+      { key: "limit", label: "How many (0 = no limit)", type: "number" },
+    ],
+    render: ({ className }) => <div className={className} />,
+  },
 };
 
 /** Blocks the renderer handles itself because they read tenant data. */
-export const DATA_COMPONENTS = new Set(["EventList", "CourseList", "CollectionList", "CollectionField", "PricingTable", "MemberSignup"]);
+export const DATA_COMPONENTS = new Set(["EventList", "CourseList", "CollectionList", "CollectionField", "PricingTable", "MemberSignup", "MemberDirectory"]);
 
 export const PALETTE_CATEGORIES = ["Layout", "Content", "Media", "Forms", "Commune"] as const;
 

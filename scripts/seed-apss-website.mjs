@@ -131,7 +131,7 @@ const CARD = { padding: "26px", "border-radius": "10px", border: `1px solid ${BO
 
 // --- Home ----------------------------------------------------------------------------
 
-function homeTree(speakersCollectionId) {
+function homeTree() {
   return [
     navBar(),
     {
@@ -203,22 +203,9 @@ function homeTree(speakersCollectionId) {
         children: [
           { component: "Eyebrow", text: "Our members", style: { color: ORANGE, "font-size": "12px", "font-weight": "700", "letter-spacing": "0.14em", "text-transform": "uppercase" } },
           { component: "Heading", text: "Meet a few of our speakers", props: { level: "h2" }, style: { ...H2, margin: "10px 0 24px" } },
-          {
-            component: "CollectionList", props: { collectionId: speakersCollectionId, limit: 4 },
-            style: { display: "grid", gap: "18px", "grid-template-columns": "1fr" },
-            desktopStyle: { "grid-template-columns": "repeat(4, minmax(0, 1fr))" },
-            children: [{
-              component: "Container", style: { ...CARD, padding: "0", overflow: "hidden", "text-align": "center" },
-              children: [
-                { component: "CollectionField", props: { field: "photo", asImage: true }, style: { width: "100%", height: "160px", "object-fit": "cover", display: "block" } },
-                { component: "Container", style: { padding: "16px" }, children: [
-                  { component: "CollectionField", props: { field: "title" }, style: { display: "block", "font-weight": "700", "font-size": "14px", color: INK } },
-                  { component: "CollectionField", props: { field: "credentials" }, style: { display: "block", "font-size": "12px", color: ORANGE, "font-weight": "600", margin: "4px 0" } },
-                  { component: "CollectionField", props: { field: "categories" }, style: { display: "block", "font-size": "11px", color: MUTED } },
-                ] },
-              ],
-            }],
-          },
+          // Live from Member Management (public.website_public_members), not a copy —
+          // a compact, non-interactive preview here; the full filterable directory is on /speakers.
+          { component: "MemberDirectory", props: { accentColor: ORANGE, limit: 3, showFilters: false } },
           { component: "Container", style: { "text-align": "center", "margin-top": "28px" }, children: [button("View all speakers", "/speakers", "solid")] },
         ],
       }],
@@ -288,7 +275,11 @@ function aboutTree() {
 
 // --- Speakers --------------------------------------------------------------------------
 
-function speakersTree(speakersCollectionId) {
+// The searchable, filterable directory itself is the MemberDirectory block — it renders
+// live from public.website_public_members(), i.e. real Member Management profiles with
+// directory_visibility='public', not a copy of them. See lib/website/render.tsx and
+// components/website/member-directory.tsx.
+function speakersTree() {
   return [
     navBar(),
     {
@@ -302,22 +293,42 @@ function speakersTree(speakersCollectionId) {
     {
       component: "Section", style: SECTION,
       children: [{ component: "Container", style: WRAP, children: [
+        { component: "MemberDirectory", props: { accentColor: ORANGE, limit: 0, showFilters: true } },
+      ] }],
+    },
+    footer(),
+  ];
+}
+
+/** One speaker's public profile, at /speakers/:userId — resolved live against
+ * public.website_public_members by user_id, adapted into the same entry shape a CMS
+ * collection_template page uses, so CollectionField needs no special casing. */
+function speakerProfileTree() {
+  return [
+    navBar(),
+    {
+      component: "Section", style: SECTION,
+      children: [{ component: "Container", style: { ...WRAP, "max-width": "760px" }, children: [
         {
-          component: "CollectionList", props: { collectionId: speakersCollectionId, limit: 24 },
-          style: { display: "grid", gap: "20px", "grid-template-columns": "1fr" },
-          desktopStyle: { "grid-template-columns": "repeat(3, minmax(0, 1fr))" },
-          children: [{
-            component: "Container", style: { ...CARD, padding: "0", overflow: "hidden" },
-            children: [
-              { component: "CollectionField", props: { field: "photo", asImage: true }, style: { width: "100%", height: "220px", "object-fit": "cover", display: "block", "background-color": PAGE_BG } },
-              { component: "Container", style: { padding: "18px" }, children: [
-                { component: "CollectionField", props: { field: "title" }, style: { display: "block", "font-weight": "700", "font-size": "16px", color: INK } },
-                { component: "CollectionField", props: { field: "credentials" }, style: { display: "block", "font-size": "12px", color: ORANGE, "font-weight": "600", margin: "4px 0 8px" } },
-                { component: "CollectionField", props: { field: "categories" }, style: { display: "block", "font-size": "12px", color: MUTED, "line-height": "1.5" } },
-              ] },
-            ],
-          }],
+          component: "Container",
+          style: { display: "grid", gap: "28px", "grid-template-columns": "1fr" },
+          desktopStyle: { "grid-template-columns": "220px 1fr", "align-items": "start" },
+          children: [
+            { component: "CollectionField", props: { field: "avatar_url", asImage: true }, style: { width: "100%", "aspect-ratio": "1 / 1", "object-fit": "cover", "border-radius": "12px", "background-color": PAGE_BG } },
+            { component: "Container", children: [
+              { component: "CollectionField", props: { field: "credential" }, style: { display: "block", "font-size": "11px", "font-weight": "700", color: ORANGE, "text-transform": "uppercase", "letter-spacing": "0.06em", "margin-bottom": "8px" } },
+              { component: "CollectionField", props: { field: "title" }, style: { display: "block", "font-size": "28px", "font-weight": "800", color: INK, margin: "0 0 6px" } },
+              { component: "CollectionField", props: { field: "headline" }, style: { display: "block", "font-size": "14px", color: TEAL, "font-weight": "600", "margin-bottom": "10px" } },
+              { component: "CollectionField", props: { field: "interests" }, style: { display: "block", "font-size": "12px", color: MUTED } },
+            ] },
+          ],
         },
+        { component: "Divider", style: { margin: "28px 0", "border-top": `1px solid ${BORDER}` } },
+        { component: "CollectionField", props: { field: "bio" }, style: { display: "block", "font-size": "15px", "line-height": "1.8", color: "#3a3a3a", "white-space": "pre-line" } },
+        { component: "Container", style: { "margin-top": "28px", display: "flex", gap: "16px", "align-items": "center" }, children: [
+          { component: "Link", text: "← Back to speakers", props: { href: "/speakers", target: "_self" }, style: { color: ORANGE, "font-weight": "700", "font-size": "13px", "text-decoration": "none" } },
+          { component: "CollectionField", props: { field: "website_url", hrefTemplate: ":self" }, style: { color: TEAL, "font-weight": "700", "font-size": "13px", "text-decoration": "none" } },
+        ] },
       ] }],
     },
     footer(),
@@ -475,50 +486,15 @@ function blogPostTree() {
   ];
 }
 
-// --- Speakers collection ---------------------------------------------------------------
-// Names, credentials, category tags, and photos taken from the APSS speaker directory.
-// Anna Ong is omitted: the directory listing had no photo or category data for her, and
-// nothing should be fabricated in her place. Dr. Damini Chawla is included without a
-// photo for the same reason — none was captured for her.
-
-const SPEAKERS = [
-  { name: "Dr. Frank Hagenow", slug: "frank-hagenow", credentials: "CSP", categories: "Management, Leadership, Conflict Resolution", photo: "https://www.asiaspeakers.org/wp-content/uploads/2020/08/APSSfh5898.jpg" },
-  { name: "Karen Leong", slug: "karen-leong", credentials: "CSP", categories: "Motivation, Leadership, Change Management", photo: "https://www.asiaspeakers.org/wp-content/uploads/2022/03/Karen-Profile-Photo-Head-Shot2817.jpg" },
-  { name: "Dr. Jerome Joseph", slug: "jerome-joseph", credentials: "CSP, Global Speaking Fellow, APSS Hall of Fame", categories: "Culture, Strategy, Branding", photo: "https://www.asiaspeakers.org/wp-content/uploads/2022/07/Global-Guru2022_RankNo2_v2_alt3847.jpg" },
-  { name: "Ron Kaufman", slug: "ron-kaufman", credentials: "CSP, Global Speaking Fellow, APSS Hall of Fame", categories: "Motivation, Management, Leadership, Customer Service, Organisation Development, Productivity", photo: "https://www.asiaspeakers.org/wp-content/uploads/2023/05/0-Ron-Kaufman-11096.jpg" },
-  { name: "Prof James Leong", slug: "james-leong", credentials: "CSP", categories: "Finance, Humour", photo: "https://www.asiaspeakers.org/wp-content/uploads/2020/08/HAPY0419E-final-v25552.png" },
-  { name: "Wesley Chan", slug: "wesley-chan", credentials: "CSP", categories: "Peak Performance, Personal Development, Sales/Negotiation", photo: "https://www.asiaspeakers.org/wp-content/uploads/2022/09/VIC_1497-min-45578.jpg" },
-  { name: "Dane Tang", slug: "dane-tang", credentials: "", categories: "Leadership", photo: "https://www.asiaspeakers.org/wp-content/uploads/2022/03/Dane-Tang-corporate-24559.jpg" },
-  { name: "Dr. Damini Chawla", slug: "damini-chawla", credentials: "", categories: "Leadership, Conflict Resolution, Communication / Voice", photo: "" },
-];
-
-async function upsertSpeakersCollection() {
-  const payload = {
-    site_id: site.id, tenant_id: tenant.id, name: "Speakers", slug: "speakers",
-    description: "APSS professional speakers, trainers, and facilitators.",
-    fields: [
-      { key: "photo", label: "Photo", type: "image", required: false },
-      { key: "credentials", label: "Credentials", type: "text", required: false },
-      { key: "categories", label: "Categories", type: "text", required: false },
-    ],
-    updated_at: new Date().toISOString(),
-  };
-  const { data: existing } = await supabase.from("website_collections").select("id").eq("site_id", site.id).eq("slug", "speakers").maybeSingle();
-  if (existing) { await supabase.from("website_collections").update(payload).eq("id", existing.id); return existing.id; }
-  const { data, error } = await supabase.from("website_collections").insert(payload).select("id").single();
-  if (error) throw error;
-  return data.id;
-}
-
-async function upsertSpeaker(collectionId, speaker) {
-  const payload = {
-    collection_id: collectionId, tenant_id: tenant.id, slug: speaker.slug, title: speaker.name, status: "published",
-    data: { photo: speaker.photo, credentials: speaker.credentials, categories: speaker.categories },
-    published_at: new Date().toISOString(), updated_at: new Date().toISOString(),
-  };
-  const { data: existing } = await supabase.from("website_collection_entries").select("id").eq("collection_id", collectionId).eq("slug", speaker.slug).maybeSingle();
-  if (existing) return supabase.from("website_collection_entries").update(payload).eq("id", existing.id);
-  return supabase.from("website_collection_entries").insert({ ...payload, created_by: userId });
+/**
+ * Speakers used to be a standalone CMS collection with a handful of hand-copied entries.
+ * That is now superseded by scripts/seed-apss-speakers-directory.mjs, which creates real
+ * Member Management profiles the /speakers page reads live — so any leftover collection
+ * from an earlier run of this script is removed rather than left as dead, unused data.
+ */
+async function removeLegacySpeakersCollection() {
+  const { data: legacy } = await supabase.from("website_collections").select("id").eq("site_id", site.id).eq("slug", "speakers").maybeSingle();
+  if (legacy) await supabase.from("website_collections").delete().eq("id", legacy.id);
 }
 
 // --- Blog collection ---------------------------------------------------------------
@@ -788,15 +764,14 @@ async function upsertDirectoryMount() {
 
 const siteId = await upsertSite();
 const site = { id: siteId };
-const collectionId = await upsertSpeakersCollection();
-for (const speaker of SPEAKERS) await upsertSpeaker(collectionId, speaker);
+await removeLegacySpeakersCollection();
 const blogCollectionId = await upsertBlogCollection();
 for (const post of BLOG_POSTS) await upsertBlogPost(blogCollectionId, post);
 
 const homeId = await upsertPage({
   name: "Home", path: "/", kind: "landing", title: "APSS",
   description: "Singapore's professional keynote speakers, corporate trainers and facilitators.",
-  document: buildDocument(homeTree(collectionId)),
+  document: buildDocument(homeTree()),
 });
 await upsertPage({
   name: "About", path: "/about", kind: "page", title: "About APSS",
@@ -806,7 +781,12 @@ await upsertPage({
 await upsertPage({
   name: "Speakers", path: "/speakers", kind: "page", title: "Our speakers",
   description: "Professional Members, Certified Speaking Professionals, and Global Speaking Fellows.",
-  document: buildDocument(speakersTree(collectionId)),
+  document: buildDocument(speakersTree()),
+});
+await upsertPage({
+  name: "Speaker profile", path: "/speakers/:userId", kind: "member_profile", title: "APSS speaker",
+  description: "An APSS speaker's public profile.",
+  document: buildDocument(speakerProfileTree()),
 });
 await upsertPage({
   name: "Blog", path: "/blog", kind: "page", title: "The APSS blog",
@@ -833,7 +813,8 @@ await upsertDirectoryMount();
 
 const origin = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "http://localhost:3001";
 console.log(JSON.stringify({
-  site: "APSS", speakers: SPEAKERS.length, blogPosts: BLOG_POSTS.length,
-  pages: ["/", "/about", "/speakers", "/blog", "/blog/:slug", "/join", "/contact"],
+  site: "APSS", blogPosts: BLOG_POSTS.length,
+  pages: ["/", "/about", "/speakers", "/speakers/:userId", "/blog", "/blog/:slug", "/join", "/contact"],
+  note: "Run pnpm seed:apss-speakers to populate the speaker directory from Member Management.",
   publicUrls: [`${origin}/${SITE_SLUG}`, `${origin}/${SITE_SLUG}/speakers`, `${origin}/${SITE_SLUG}/blog`, `${origin}/${SITE_SLUG}/blog/${BLOG_POSTS[0].slug}`],
 }, null, 2));
