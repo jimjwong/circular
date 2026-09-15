@@ -117,6 +117,16 @@ export function parseDocument(value: unknown): WebsiteDocument {
   return result.success ? result.data : emptyDocument();
 }
 
+let idCounter = 0;
+
+/**
+ * Builder-local id, not a database key. crypto.randomUUID() only exists in a secure
+ * context (https, or localhost) — over a LAN/Tailscale http:// origin it is undefined,
+ * so it cannot be relied on here. This stays unique within a page session, which is all
+ * an id in a document tree needs.
+ */
 export function createId(prefix: string) {
-  return `${prefix}-${crypto.randomUUID().slice(0, 8)}`;
+  idCounter += 1;
+  const random = Math.random().toString(36).slice(2, 8);
+  return `${prefix}-${Date.now().toString(36)}${idCounter.toString(36)}${random}`;
 }
